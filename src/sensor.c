@@ -96,7 +96,7 @@ char* get_sensor_req(char* sensor_name){
         esp_err_t fetcherr = esp_http_client_fetch_headers(client);
         if(fetcherr != ESP_FAIL){ 
             esp_http_client_read_response(client, local_response_buffer, MAX_HTTP_OUTPUT_BUFFER);
-            ESP_LOGI(TAG, "Read %s, \nSize: %d", local_response_buffer, esp_http_client_get_content_length(client));
+            ESP_LOGI(TAG, "Read %s, \nSize: %lld", local_response_buffer, esp_http_client_get_content_length(client));
         } else {
             ESP_LOGE(TAG, "Failed to fetch request: %s", esp_err_to_name(fetcherr));
             failed = true;

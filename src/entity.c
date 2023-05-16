@@ -36,6 +36,7 @@ void upload_entity_data(char* entity_name, char* friendly_entity_name, char* uni
     char api_URL[256];
     snprintf(api_URL, 256, "%s/api/states/%s", ha_url, entity_name);
     
+    // TODO: MAKE THIS OUT OF AN HAENTITY*
     // Create API request to home assistant with entity data  
     char api_req[256];
     snprintf(api_req, 256, "{\"state\": \"%.2f\", \"attributes\": {\"unit_of_measurement\": \"%s\", \"friendly_name\": \"%s\"}}", data, units, friendly_entity_name);
@@ -81,7 +82,8 @@ void upload_entity_data(char* entity_name, char* friendly_entity_name, char* uni
     esp_http_client_cleanup(client);
 }
 
-char* get_entity_req(char* entity_name){
+
+static char* get_entity_req(char* entity_name){
     if(!ha_url || !long_lived_access_token){
         ESP_LOGE(TAG, "Failed to upload data: ha_url or access token not set yet");
         return NULL;
@@ -152,41 +154,54 @@ char* get_entity_req(char* entity_name){
     return local_response_buffer;
 }
 
-// Gets entity state from the entity name in home assistant.
-// Must be manually freed
-char* get_entity_state(char* entity_name){
+// TODO: ADD THE REST OF THE STRUCT OTHER THAN STATE
+// Parses the entity str using cJSON
+static HAEntity* parse_entity_str(char* entitystr)
+{
+    if(!entitystr)
+        return NULL;
 
-    const char* req = get_entity_req(entity_name);
-
-    if (!req) {
-        ESP_LOGE(TAG, "GET request failed");
+    HAEntity* entity = malloc(sizeof(HAEntity));
+    if(!entity) {
+        ESP_LOGE(TAG, "Failed to malloc HAEntity.");
         return NULL;
     }
 
-    cJSON *jsonreq = cJSON_Parse(req);
-    if (!jsonreq) {
-        ESP_LOGE(TAG, "Failed to convert JSON to cJSON");
-        return NULL;
-    }
-    
-    free((void*) req);
+    cJSON* jsonreq = cJSON_Parse(entitystr);
+    free(entitystr);
 
     cJSON* state = cJSON_GetObjectItem(jsonreq, "state");
+    if(!state) {
+        ESP_LOGI(TAG, "Entity had no state.");
+        entity->state = malloc(1);
+        strcpy(entity->state, "");
+    } else {
+        entity->state = malloc(strlen(state->valuestring)+1);
+        strcpy(entity->state, state->valuestring);
+    }
 
-    if (!state) {
-        ESP_LOGE(TAG, "Could not get entity state from GET request");
+    entity->attributes = NULL;
+
+    cJSON_Delete(jsonreq);
+
+    return entity;
+}
+
+HAEntity* get_entity(char* entity_name)
+{
+    char* entitystr = get_entity_req(entity_name);
+    HAEntity* entity = parse_entity_str(entitystr);
+    if(!entity) {
+        ESP_LOGE(TAG, "Failed to get HAEntity");
         return NULL;
     }
 
-    if (!(state->valuestring)) {
-        ESP_LOGE(TAG, "Could not get entity state->valuestring from GET request");
-        return NULL;
-    }
+    return entity;
+}
 
-    char* entity_state = malloc(strlen(state->valuestring));
-    strcpy(entity_state, state->valuestring);
-
-    cJSON_Delete(jsonreq); 
-
-    return entity_state;
+// Frees HAEntity
+void HAEntity_destroy(HAEntity* item){
+    free(item->state);
+    free(item->attributes);
+    free(item);
 }

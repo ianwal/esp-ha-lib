@@ -1,4 +1,3 @@
-#include "secrets.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
 #include "sensor.h"

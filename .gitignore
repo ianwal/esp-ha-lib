@@ -69,9 +69,3 @@ build
 
 #ESP32
 sdkconfig.esp32dev
-
-# Secrets
-wifisecrets.h
-secrets.h
-include/secrets.h
-test/wifisecrets.h

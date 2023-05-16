@@ -1,0 +1,21 @@
+{
+  "name": "esp-ha-lib",
+  "version": "0.1.0",
+  "description": "Library for interfacing with Home Assistants REST API",
+  "keywords": "homeassistant",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/ianwal/esp-ha-lib.git"
+  },
+  "authors":
+  [
+    {
+      "name": "Ian Wallace",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "frameworks": ["espidf", "freertos"],
+  "platforms": "espressif32"
+}

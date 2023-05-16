@@ -15,12 +15,11 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-
 #include "driver/gpio.h"
 
-#include "secrets.h"
 #include "sensor.h"
 #include "wifi.h"
+#include "secrets.h"
 
 #include <unity.h>
 
@@ -31,13 +30,16 @@ void test_sensor_uploadreceive(void){
     wifi_init_sta();
 
     TEST_ASSERT_MESSAGE(is_wifi_connected(), "WiFi is not connected");
-    
+
     // sensor name cannot contain special characters other than _ it appears
     char* test_sensor_name = "esphalibtest";
     char* test_friendly_sensor_name = "esp ha lib test";
     char* test_units = "Test Units";
     float test_data = (esp_random() % 100);
-     
+    
+    set_ha_url(HA_URL);
+    set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
+    
     upload_sensor_data(test_sensor_name, test_friendly_sensor_name, test_units, test_data);
     
     char* req = get_sensor_req(test_sensor_name);
@@ -60,6 +62,7 @@ void test_sensor_uploadreceive(void){
 
     cJSON_Delete(jsonreq); 
     free(req);
+    
 }
 
 

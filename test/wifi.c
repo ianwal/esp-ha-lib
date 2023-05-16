@@ -5,7 +5,6 @@
 #include "freertos/event_groups.h"
 #include "nvs_flash.h"
 
-#include "secrets.h"
 #include "wifisecrets.h"
 
 #define EXAMPLE_ESP_MAXIMUM_RETRY  2

@@ -57,7 +57,8 @@ void test_sensor_uploadreceive(void){
 
     ESP_LOGI(TAG, "Uploaded: %f, Received %f", test_data, fstate); 
 
-    float epsilon = 1e-9;
+    // HA only stores floats to 2 decimal places it seems
+    float epsilon = 1e-2;
     TEST_ASSERT_FLOAT_WITHIN(epsilon, test_data, fstate);
 
     cJSON_Delete(jsonreq); 

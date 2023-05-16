@@ -20,6 +20,7 @@
 #include "entity.h"
 #include "wifi.h"
 #include "secrets.h"
+#include "api.h"
 
 #include <unity.h>
 
@@ -35,9 +36,6 @@ void test_entity_uploadreceive(void){
     char* test_friendly_entity_name = "esp ha lib test";
     char* test_units = "Test Units";
     float test_data = (esp_random() % 100);
-    
-    set_ha_url(HA_URL);
-    set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
     
     upload_entity_data(test_entity_name, test_friendly_entity_name, test_units, test_data);
 
@@ -55,14 +53,24 @@ void test_entity_uploadreceive(void){
     }
 }
 
+void test_api_running(void) {
+    TEST_ASSERT_MESSAGE(is_wifi_connected(), "WiFi is not connected");
+    
+    TEST_ASSERT_MESSAGE(get_api_status(), "API is running and accessible.");
+}
+
 int runUnityTests(void) {
     UNITY_BEGIN();
+    RUN_TEST(test_api_running);
     RUN_TEST(test_entity_uploadreceive);
     return UNITY_END();
 }
 
 void app_main(void) {
     wifi_init_sta();
+
+    set_ha_url(HA_URL);
+    set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
 
     assert(is_wifi_connected()); 
     runUnityTests();

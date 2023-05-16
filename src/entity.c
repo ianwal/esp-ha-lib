@@ -56,7 +56,7 @@ void upload_entity_data(char* entity_name, char* friendly_entity_name, char* uni
     esp_http_client_config_t home_assistant_config = {
         .url = api_URL,
         .method = HTTP_METHOD_POST,
-        .timeout_ms = 1500,
+        .timeout_ms = 5000,
         .is_async = false,
         .skip_cert_common_name_check = true,
         .disable_auto_redirect = false,
@@ -171,16 +171,51 @@ static HAEntity* parse_entity_str(char* entitystr)
     free(entitystr);
 
     cJSON* state = cJSON_GetObjectItem(jsonreq, "state");
-    if(!state) {
-        ESP_LOGI(TAG, "Entity had no state.");
-        entity->state = malloc(1);
-        strcpy(entity->state, "");
+    if(cJSON_IsNull(state) || !cJSON_IsString(state)) {
+        ESP_LOGI(TAG, "Entity has no state or is not a string.");
+        entity->state = NULL;
     } else {
         entity->state = malloc(strlen(state->valuestring)+1);
         strcpy(entity->state, state->valuestring);
     }
 
-    entity->attributes = NULL;
+    cJSON* entity_id = cJSON_GetObjectItem(jsonreq, "entity_id");
+    if(cJSON_IsNull(entity_id) || !cJSON_IsString(entity_id)){
+        ESP_LOGI(TAG, "Entity has no entity_id or it is not a string.");
+        strcpy(entity->entity_id, "");
+    } else {
+        strcpy(entity->entity_id, entity_id->valuestring);
+    }
+    
+    cJSON* last_changed = cJSON_GetObjectItem(jsonreq, "last_changed");
+    if(cJSON_IsNull(last_changed) || !cJSON_IsString(last_changed)){
+        ESP_LOGI(TAG, "Entity has no last_changed or it is not a string.");
+        strcpy(entity->last_changed, "");
+    } else {
+        strcpy(entity->last_changed, last_changed->valuestring);
+    }
+    
+    cJSON* last_updated = cJSON_GetObjectItem(jsonreq, "last_updated");
+    if(cJSON_IsNull(last_updated) || !cJSON_IsString(last_updated)){
+        ESP_LOGI(TAG, "Entity has no last_updated or it is not a string.");
+        strcpy(entity->last_updated, "");
+    } else {
+        strcpy(entity->last_updated, last_updated->valuestring);
+    }
+
+    cJSON* attributes = cJSON_GetObjectItem(jsonreq, "attributes");
+    if(cJSON_IsNull(attributes) || !cJSON_IsObject(attributes)) {
+        ESP_LOGI(TAG, "Entity has no attributes or it is not a cJSON object.");
+        entity->attributes = NULL;
+    } else {
+        entity->attributes = cJSON_Duplicate(attributes, true);
+        /*
+        for(int i =0; i < cJSON_GetArraySize(attributes); i++) {
+            ESP_LOGI(TAG, "attribute: %s", cJSON_GetArrayItem(attributes, i)->string);
+        }
+        */
+    }
+
 
     cJSON_Delete(jsonreq);
 
@@ -202,6 +237,6 @@ HAEntity* get_entity(char* entity_name)
 // Frees HAEntity
 void HAEntity_destroy(HAEntity* item){
     free(item->state);
-    free(item->attributes);
+    cJSON_Delete(item->attributes);
     free(item);
 }

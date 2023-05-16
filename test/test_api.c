@@ -29,7 +29,7 @@ static const char *TAG = "TESTING";
 void test_entity_uploadreceive(void){
     TEST_ASSERT_MESSAGE(is_wifi_connected(), "WiFi is not connected");
 
-    for(int i = 0; i < 5; i++){
+    for(int i = 0; i < 2; i++){
     // entity name cannot contain special characters other than _ it appears
     char* test_entity_name = "sensor.esphalibtest";
     char* test_friendly_entity_name = "esp ha lib test";

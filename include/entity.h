@@ -1,11 +1,13 @@
 #pragma once
 
+#include "cJSON.h"
+
 typedef struct {
     char entity_id[256]; // definite 256 max from what I searched
     char* state; 
-    char* attributes;
-    char* last_changed[48]; // ISO 8601 formatted datettime ex. 2016-05-30T21:43:29.204838+00:00 = 32 char
-    char* last_updated[48]; // ISO 8601 formatted datettime ex. 2016-05-30T21:43:29.204838+00:00 = 32 char
+    cJSON* attributes;
+    char last_changed[48]; // ISO 8601 formatted datettime ex. 2016-05-30T21:43:29.204838+00:00 = 32 char
+    char last_updated[48]; // ISO 8601 formatted datettime ex. 2016-05-30T21:43:29.204838+00:00 = 32 char
 } HAEntity;
 
 void HAEntity_destroy(HAEntity* item);

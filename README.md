@@ -1,2 +1,2 @@
 # esp-ha-lib
-Library for interfacing with Home Assistants REST API
+WIP Library for interfacing with Home Assistants REST API

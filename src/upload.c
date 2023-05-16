@@ -45,6 +45,7 @@ void upload_sensor_data(char* sensor_name, char* friendly_sensor_name, char* uni
         ESP_LOGE(TAG, "Could not send upload sensor data.");
     }
 
+    free(auth_data);
     esp_http_client_close(client);
     esp_http_client_cleanup(client);
 }

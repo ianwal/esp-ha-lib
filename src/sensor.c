@@ -6,6 +6,14 @@ static const char *TAG = "Upload";
 
 #define MAX_HTTP_OUTPUT_BUFFER 1024
 
+#ifndef HA_URL
+#define HA_URL "localhost"
+#endif
+
+#ifndef LONG_LIVED_ACCESS_TOKEN
+#define LONG_LIVED_ACCESS_TOKEN "12345"
+#endif
+
 void upload_sensor_data(char* sensor_name, char* friendly_sensor_name, char* units, float data) {
     // Create API URL. Will look something like http://HA_URL/api/states/sensor.SENSOR_NAME
     char api_URL[256];

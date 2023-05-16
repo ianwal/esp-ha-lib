@@ -1,3 +1,5 @@
+// Most of this file is from the ESP-IDF WiFi station client example
+
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "freertos/event_groups.h"
@@ -43,6 +45,29 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
+}
+
+bool is_wifi_connected(void)
+{
+    /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
+     * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
+    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
+            WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+            pdFALSE,
+            pdFALSE,
+            portMAX_DELAY);
+
+    /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
+     * happened. */
+    if (bits & WIFI_CONNECTED_BIT) {
+        ESP_LOGI(TAG, "Connected to AP SSID: '%s'", NETWORK_SSID);
+        return true;
+    } else if (bits & WIFI_FAIL_BIT) {
+        ESP_LOGI(TAG, "Failed to connect to SSID: '%s'", NETWORK_SSID);
+    } else {
+        ESP_LOGE(TAG, "UNEXPECTED EVENT");
+    }
+    return false;
 }
 
 void wifi_init_sta(void)
@@ -97,21 +122,6 @@ void wifi_init_sta(void)
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");
 
-    /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
-     * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
-    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-            WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
-            pdFALSE,
-            pdFALSE,
-            portMAX_DELAY);
-
-    /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
-     * happened. */
-    if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "Connected to AP SSID: '%s'", NETWORK_SSID);
-    } else if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGI(TAG, "Failed to connect to SSID: '%s'", NETWORK_SSID);
-    } else {
-        ESP_LOGE(TAG, "UNEXPECTED EVENT");
-    }
+    // Just used to print if WiFi is connected currently
+    is_wifi_connected();
 }

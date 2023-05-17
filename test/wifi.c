@@ -33,14 +33,14 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
             esp_wifi_connect();
             s_retry_num++;
-            ESP_LOGI(TAG, "Retrying connection to AP");
+            ESP_LOGV(TAG, "Retrying connection to AP");
         } else {
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
         }
-        ESP_LOGI(TAG,"Connection to AP failed.");
+        ESP_LOGV(TAG,"Connection to AP failed.");
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "IP Obtained - " IPSTR, IP2STR(&event->ip_info.ip));
+        ESP_LOGV(TAG, "IP Obtained - " IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
@@ -59,12 +59,12 @@ bool is_wifi_connected(void)
     /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
      * happened. */
     if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "Connected to AP SSID: '%s'", NETWORK_SSID);
+        ESP_LOGV(TAG, "Connected to AP SSID: '%s'", NETWORK_SSID);
         return true;
     } else if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGI(TAG, "Failed to connect to SSID: '%s'", NETWORK_SSID);
+        ESP_LOGV(TAG, "Failed to connect to SSID: '%s'", NETWORK_SSID);
     } else {
-        ESP_LOGE(TAG, "UNEXPECTED EVENT");
+        ESP_LOGE(TAG, "UNEXPECTED WIFI EVENT");
     }
     return false;
 }
@@ -78,7 +78,7 @@ void wifi_init_sta(void)
       ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+    ESP_LOGV(TAG, "ESP_WIFI_MODE_STA");
 
     s_wifi_event_group = xEventGroupCreate();
 
@@ -119,7 +119,7 @@ void wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK(esp_wifi_start() );
 
-    ESP_LOGI(TAG, "wifi_init_sta finished.");
+    ESP_LOGV(TAG, "wifi_init_sta finished.");
 
     // Just used to print if WiFi is connected currently
     is_wifi_connected();

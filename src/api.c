@@ -15,16 +15,14 @@ char* long_lived_access_token = NULL;
 void set_ha_url(const char* new_url)
 {
     free(ha_url);
-    ha_url = (char*) malloc(strlen(new_url)+1);
-    strcpy(ha_url, new_url);
+    ha_url = strdup(new_url);
     ESP_LOGI(TAG, "Set new ha_url to: %s", ha_url);
 }
 
 void set_long_lived_access_token(const char* new_long_lived_access_token)
 {
     free(long_lived_access_token);
-    long_lived_access_token = malloc(strlen(new_long_lived_access_token)+1);
-    strcpy(long_lived_access_token, new_long_lived_access_token);
+    long_lived_access_token = strdup(new_long_lived_access_token);
     ESP_LOGI(TAG, "Set new LLAT to: %s", long_lived_access_token);
 }
 
@@ -59,7 +57,7 @@ void post_req(char* path, char* data) {
         .disable_auto_redirect = false,
     };
     
-    ESP_LOGI(TAG, "Attempting connection to %s", api_URL);
+    ESP_LOGV(TAG, "Attempting connection to %s", api_URL);
 
     esp_http_client_handle_t client = esp_http_client_init(&home_assistant_config);
     esp_http_client_set_header(client, "Authorization", auth_data);
@@ -67,7 +65,7 @@ void post_req(char* path, char* data) {
     esp_http_client_set_post_field(client, data, strlen(data));
 
     if(esp_http_client_perform(client) == ESP_OK){
-        ESP_LOGI(TAG, "Sent %s to %s", data, api_URL);
+        ESP_LOGV(TAG, "Sent %s to %s", data, api_URL);
     } else {
         ESP_LOGE(TAG, "Could not send upload entity data.");
     }
@@ -127,7 +125,7 @@ char* get_req(char* path)
         esp_err_t fetcherr = esp_http_client_fetch_headers(client);
         if(fetcherr != ESP_FAIL){ 
             esp_http_client_read_response(client, local_response_buffer, MAX_HTTP_OUTPUT_BUFFER);
-            ESP_LOGI(TAG, "Read %s, \nSize: %lld", local_response_buffer, esp_http_client_get_content_length(client));
+            ESP_LOGV(TAG, "Read %s, \nSize: %lld", local_response_buffer, esp_http_client_get_content_length(client));
         } else {
             ESP_LOGE(TAG, "Failed to fetch request: %s", esp_err_to_name(fetcherr));
             failed = true;
@@ -165,13 +163,14 @@ bool get_api_status(void)
     }
 
     cJSON* message = cJSON_GetObjectItem(jsonreq, "message");
-    if (cJSON_IsNull(message)){
+    if (cJSON_IsNull(message) || !cJSON_IsString(message)){
         cJSON_Delete(jsonreq);
         return false;
     }
-    ESP_LOGI(TAG, "%s", message->valuestring);
 
-    if (strcmp(message->valuestring, "API running.") == 0) {
+    ESP_LOGV(TAG, "Status: %s", cJSON_GetStringValue(message));
+
+    if (strncmp(cJSON_GetStringValue(message), "API running.", sizeof("API running.")) == 0) {
         cJSON_Delete(jsonreq);
         return true;
     }

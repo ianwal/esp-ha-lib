@@ -59,10 +59,33 @@ void test_api_running(void) {
     TEST_ASSERT_MESSAGE(get_api_status(), "API is running and accessible.");
 }
 
+void test_print_HAEntity(void)
+{
+    HAEntity entity = {.entity_id="print_test1", .last_updated="2021-02-12T10:41:28.422190+00:00", .last_changed="2023-05-17T10:41:28.855123+00:00"};
+    entity.attributes = cJSON_Parse("{\"unit_of_measurement\":\"Test Units\",\"friendly_name\":\"esp ha lib test\"}");
+    entity.state = strdup("on!");
+    print_HAEntity(&entity);
+    
+    cJSON_Delete(entity.attributes);
+    free(entity.state);
+}
+
+// Tests printing a real HAEntity from Home Assistant
+// Needs entity "sensor.esphalibtest" or a substitute on a live home assistant
+void test_print_real_HAEntity(void)
+{
+    HAEntity* entity = malloc(sizeof(HAEntity));
+    entity = get_entity("sensor.esphalibtest");
+    print_HAEntity(entity);
+    HAEntity_destroy(entity);
+}
+
 int runUnityTests(void) {
     UNITY_BEGIN();
     RUN_TEST(test_api_running);
+    RUN_TEST(test_print_HAEntity);
     RUN_TEST(test_entity_uploadreceive);
+    RUN_TEST(test_print_real_HAEntity);
     return UNITY_END();
 }
 
@@ -72,6 +95,5 @@ void app_main(void) {
     set_ha_url(HA_URL);
     set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
 
-    assert(is_wifi_connected()); 
     runUnityTests();
 }

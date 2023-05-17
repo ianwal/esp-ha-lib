@@ -4,7 +4,7 @@
 #include "cJSON.h"
 #include "api.h"
 
-static const char *TAG = "Upload";
+static const char *TAG = "Entity";
 
 #define statespath "/api/states/"
 
@@ -33,8 +33,9 @@ static char* get_entity_req(char* entity_name){
     return req;
 }
 
-// TODO: ADD THE REST OF THE STRUCT OTHER THAN STATE
 // Parses the entity str using cJSON
+// Duplicates and assings the values from the parsed cJSOn, then frees the cJSON
+// Returned HAEntity must be manually freed with HAEntity_destroy()
 static HAEntity* parse_entity_str(char* entitystr)
 {
     if(!entitystr)
@@ -54,8 +55,7 @@ static HAEntity* parse_entity_str(char* entitystr)
         ESP_LOGI(TAG, "Entity has no state or is not a string.");
         entity->state = NULL;
     } else {
-        entity->state = malloc(strlen(state->valuestring)+1);
-        strcpy(entity->state, state->valuestring);
+        entity->state = strdup(cJSON_GetStringValue(state));
     }
 
     cJSON* entity_id = cJSON_GetObjectItem(jsonreq, "entity_id");
@@ -63,23 +63,27 @@ static HAEntity* parse_entity_str(char* entitystr)
         ESP_LOGI(TAG, "Entity has no entity_id or it is not a string.");
         strcpy(entity->entity_id, "");
     } else {
-        strcpy(entity->entity_id, entity_id->valuestring);
+        // Safe string copy
+        strncpy(entity->entity_id, cJSON_GetStringValue(entity_id), sizeof(entity->entity_id));
+        entity->entity_id[sizeof(entity->entity_id) - 1] = '\0';
     }
-    
+
     cJSON* last_changed = cJSON_GetObjectItem(jsonreq, "last_changed");
     if(cJSON_IsNull(last_changed) || !cJSON_IsString(last_changed)){
         ESP_LOGI(TAG, "Entity has no last_changed or it is not a string.");
         strcpy(entity->last_changed, "");
     } else {
-        strcpy(entity->last_changed, last_changed->valuestring);
+        strncpy(entity->last_changed, cJSON_GetStringValue(last_changed), sizeof(entity->last_changed));
+        entity->last_changed[sizeof(entity->last_changed) - 1] = '\0';
     }
-    
+
     cJSON* last_updated = cJSON_GetObjectItem(jsonreq, "last_updated");
     if(cJSON_IsNull(last_updated) || !cJSON_IsString(last_updated)){
         ESP_LOGI(TAG, "Entity has no last_updated or it is not a string.");
         strcpy(entity->last_updated, "");
     } else {
-        strcpy(entity->last_updated, last_updated->valuestring);
+        strncpy(entity->last_updated, cJSON_GetStringValue(last_updated), sizeof(entity->last_updated));
+        entity->last_updated[sizeof(entity->last_updated) - 1] = '\0';
     }
 
     cJSON* attributes = cJSON_GetObjectItem(jsonreq, "attributes");
@@ -88,11 +92,6 @@ static HAEntity* parse_entity_str(char* entitystr)
         entity->attributes = NULL;
     } else {
         entity->attributes = cJSON_Duplicate(attributes, true);
-        /*
-        for(int i =0; i < cJSON_GetArraySize(attributes); i++) {
-            ESP_LOGI(TAG, "attribute: %s", cJSON_GetArrayItem(attributes, i)->string);
-        }
-        */
     }
 
 
@@ -114,8 +113,41 @@ HAEntity* get_entity(char* entity_name)
 }
 
 // Frees HAEntity
-void HAEntity_destroy(HAEntity* item){
+void HAEntity_destroy(HAEntity* item)
+{
     free(item->state);
     cJSON_Delete(item->attributes);
     free(item);
+}
+
+// Print HAEntity
+void print_HAEntity(HAEntity* item)
+{
+    ESP_LOGV(TAG, "Printing HAEntity");
+
+    if (!item) {
+        ESP_LOGI(TAG, "Cannot print HAEntity: Entity is NULL.");
+        return;
+    }
+
+    ESP_LOGI(TAG, "entity_id: %s", item->entity_id);
+
+    if (item->state) {
+        ESP_LOGI(TAG, "state: %s", item->state);
+    } else {
+        // Should this just print something like "no state"? Printing "state:" makes it consistent with the other attributes.
+        ESP_LOGI(TAG, "state:");
+    }
+
+    if (cJSON_IsNull(item->attributes) || !cJSON_IsObject(item->attributes)) {
+        ESP_LOGI(TAG, "attributes:");
+    } else {
+        for(int i = 0; i < cJSON_GetArraySize(item->attributes); i++)
+        {
+            ESP_LOGI(TAG, "attribute %d: %s", i+1, cJSON_GetArrayItem(item->attributes, i)->string);
+        }
+    }
+
+    ESP_LOGI(TAG, "last_changed: %s", item->last_changed);
+    ESP_LOGI(TAG, "last_updated: %s", item->last_updated);
 }

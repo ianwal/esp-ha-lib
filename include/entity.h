@@ -14,7 +14,7 @@ void HAEntity_destroy(HAEntity* item);
 void add_entity_attribute(char* key, char* value, HAEntity* entity);
 HAEntity* get_entity(char* entity_name);
 
-void upload_entity_data(char* entity_name, char* friendly_entity_name, char* units, float data);
+void post_entity(HAEntity* entity);
 
 void set_ha_url(const char* url);
 void set_long_lived_access_token(const char* new_long_lived_access_token);

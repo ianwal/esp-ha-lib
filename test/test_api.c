@@ -28,35 +28,39 @@ static const char *TAG = "TESTING";
 
 // Attemps to upload and get back a float for a test entity
 void test_entity_uploadreceive(void){
-    TEST_ASSERT_MESSAGE(is_wifi_connected(), "WiFi is not connected");
-
-    for(int i = 0; i < 2; i++){
-    // entity name cannot contain special characters other than _ it appears
-    char* test_entity_name = "sensor.esphalibtest";
-    char* test_friendly_entity_name = "esp ha lib test";
-    char* test_units = "Test Units";
-    float test_data = (esp_random() % 100);
+    // entity name cannot contain special characters other than _ or . it appears
+    char* entity_id = "sensor.esphalibtest";
+    char* friendly_entity_name = "esp ha lib test";
+    char* unit_of_measurement = "Test Units";
+    float state = (esp_random() % 100);
     
-    upload_entity_data(test_entity_name, test_friendly_entity_name, test_units, test_data);
-
     HAEntity* entity = malloc(sizeof(HAEntity));
-    entity = get_entity(test_entity_name);
-    float fstate = strtof(entity->state, NULL);   
+    entity->state = malloc(8);
+    entity->attributes = NULL; 
+    snprintf(entity->state, 8, "%.2f", state);
+    strcpy(entity->entity_id, entity_id);
+    add_entity_attribute("friendly_name", friendly_entity_name, entity);
+    add_entity_attribute("unit_of_measurement", unit_of_measurement, entity);
+
+    post_entity(entity);
+
+    HAEntity* newEntity = get_entity(entity_id);
+    float fstate = strtof(newEntity->state, NULL);   
     
-    ESP_LOGI(TAG, "Uploaded: %f, Received %f", test_data, fstate); 
+    ESP_LOGI(TAG, "Uploaded: %f, Received %f", state, fstate); 
     
     // HA only stores floats to 2 decimal places it seems
     float epsilon = 1e-2;
 
     HAEntity_destroy(entity);
-    TEST_ASSERT_FLOAT_WITHIN(epsilon, test_data, fstate);
-    }
+    HAEntity_destroy(newEntity);
+    TEST_ASSERT_FLOAT_WITHIN(epsilon, state, fstate);
 }
 
 void test_api_running(void) {
     TEST_ASSERT_MESSAGE(is_wifi_connected(), "WiFi is not connected");
     
-    TEST_ASSERT_MESSAGE(get_api_status(), "API is running and accessible.");
+    TEST_ASSERT_MESSAGE(get_api_status(), "API is not accessible and/or not running.");
 }
 
 void test_print_HAEntity(void)
@@ -75,6 +79,8 @@ void test_print_HAEntity(void)
 void test_print_real_HAEntity(void)
 {
     HAEntity* entity = malloc(sizeof(HAEntity));
+    entity->state = NULL;
+    entity->attributes = NULL;
     entity = get_entity("sensor.esphalibtest");
     print_HAEntity(entity);
     HAEntity_destroy(entity);
@@ -84,6 +90,8 @@ void test_print_real_HAEntity(void)
 void test_add_entity_attribute(void)
 {
     HAEntity* entity = malloc(sizeof(HAEntity));
+    entity->state = NULL;
+    entity->attributes = NULL;
     char* entity_name = "sensor.randomsensortest";
     char* friendly_entity_name = "esp ha lib sensor test";
     char* unit_of_measurement = "test units";

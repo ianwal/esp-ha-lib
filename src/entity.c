@@ -8,33 +8,39 @@ static const char *TAG = "Entity";
 
 #define statespath "/api/states/"
 
-void upload_entity_data(char* entity_name, char* friendly_entity_name, char* units, float data){
-    // TODO: MAKE THIS OUT OF AN HAENTITY*
-    // Create API request to home assistant with entity data  
-    char api_req[256];
-    snprintf(api_req, 256, "{\"state\": \"%.2f\", \"attributes\": {\"unit_of_measurement\": \"%s\", \"friendly_name\": \"%s\"}}", data, units, friendly_entity_name);
+// Create API request to home assistant with entity data  
+void post_entity(HAEntity* entity){
+    cJSON* json_api_req = cJSON_CreateObject();
 
-    char path[sizeof(statespath)+strlen(entity_name)+1];
-    snprintf(path, sizeof(statespath)+strlen(entity_name)+1, "%s%s", statespath, entity_name);
+    cJSON_AddItemToObject(json_api_req, "state", cJSON_CreateString(entity->state));
+    cJSON_AddItemToObject(json_api_req, "attributes", cJSON_Duplicate(entity->attributes, true));
+
+    char* jsonstr = cJSON_Print(json_api_req);
+    //ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
+
+    char path[sizeof(statespath)+strlen(entity->entity_id)+1];
+    snprintf(path, sizeof(statespath)+strlen(entity->entity_id)+1, "%s%s", statespath, entity->entity_id);
     
-    post_req(path, api_req);
+    //ESP_LOGI(TAG, "Path - %s", path);
+    
+    post_req(path, jsonstr);
+    free(jsonstr);
 }
 
 // ex. unit_of_measurement, friendly_name
 void add_entity_attribute(char* key, char* value, HAEntity* entity)
 {
     if (!entity){
-        ESP_LOGE(TAG, "BAD ENTITY");
+        ESP_LOGE(TAG, "Failed to add entity to attribute. Entity is null.");
         return;
     }
     
-    if(!entity->attributes)
+    if (!entity->attributes)
     {
-        ESP_LOGE(TAG, "Created array, YAY!");
         entity->attributes = cJSON_CreateObject();
     }
     
-    ESP_LOGE(TAG, "Adding item to array");
+    ESP_LOGV(TAG, "Adding %s:%s to attributes", key, value);
     cJSON_AddItemToObject(entity->attributes, key, cJSON_CreateString(value));
 }
 
@@ -43,7 +49,7 @@ static char* get_entity_req(char* entity_name){
     snprintf(path, 256+sizeof(statespath), "%s%s", statespath, entity_name);
     char* req = get_req(path);
     
-    if(!req) {
+    if (!req) {
         ESP_LOGE(TAG, "API entity GET request failed");
         return NULL;
     }
@@ -56,11 +62,11 @@ static char* get_entity_req(char* entity_name){
 // Returned HAEntity must be manually freed with HAEntity_destroy()
 static HAEntity* parse_entity_str(char* entitystr)
 {
-    if(!entitystr)
+    if (!entitystr)
         return NULL;
 
     HAEntity* entity = malloc(sizeof(HAEntity));
-    if(!entity) {
+    if (!entity) {
         ESP_LOGE(TAG, "Failed to malloc HAEntity.");
         return NULL;
     }
@@ -69,7 +75,7 @@ static HAEntity* parse_entity_str(char* entitystr)
     free(entitystr);
 
     cJSON* state = cJSON_GetObjectItem(jsonreq, "state");
-    if(cJSON_IsNull(state) || !cJSON_IsString(state)) {
+    if (cJSON_IsNull(state) || !cJSON_IsString(state)) {
         ESP_LOGI(TAG, "Entity has no state or is not a string.");
         entity->state = NULL;
     } else {
@@ -77,7 +83,7 @@ static HAEntity* parse_entity_str(char* entitystr)
     }
 
     cJSON* entity_id = cJSON_GetObjectItem(jsonreq, "entity_id");
-    if(cJSON_IsNull(entity_id) || !cJSON_IsString(entity_id)){
+    if (cJSON_IsNull(entity_id) || !cJSON_IsString(entity_id)) {
         ESP_LOGI(TAG, "Entity has no entity_id or it is not a string.");
         strcpy(entity->entity_id, "");
     } else {
@@ -87,7 +93,7 @@ static HAEntity* parse_entity_str(char* entitystr)
     }
 
     cJSON* last_changed = cJSON_GetObjectItem(jsonreq, "last_changed");
-    if(cJSON_IsNull(last_changed) || !cJSON_IsString(last_changed)){
+    if (cJSON_IsNull(last_changed) || !cJSON_IsString(last_changed)) {
         ESP_LOGI(TAG, "Entity has no last_changed or it is not a string.");
         strcpy(entity->last_changed, "");
     } else {
@@ -96,7 +102,7 @@ static HAEntity* parse_entity_str(char* entitystr)
     }
 
     cJSON* last_updated = cJSON_GetObjectItem(jsonreq, "last_updated");
-    if(cJSON_IsNull(last_updated) || !cJSON_IsString(last_updated)){
+    if (cJSON_IsNull(last_updated) || !cJSON_IsString(last_updated)) {
         ESP_LOGI(TAG, "Entity has no last_updated or it is not a string.");
         strcpy(entity->last_updated, "");
     } else {
@@ -105,7 +111,7 @@ static HAEntity* parse_entity_str(char* entitystr)
     }
 
     cJSON* attributes = cJSON_GetObjectItem(jsonreq, "attributes");
-    if(cJSON_IsNull(attributes) || !cJSON_IsObject(attributes)) {
+    if (cJSON_IsNull(attributes) || !cJSON_IsObject(attributes)) {
         ESP_LOGI(TAG, "Entity has no attributes or it is not a cJSON object.");
         entity->attributes = NULL;
     } else {
@@ -134,8 +140,10 @@ HAEntity* get_entity(char* entity_name)
 void HAEntity_destroy(HAEntity* item)
 {
     free(item->state);
+    item->state = NULL;
     cJSON_Delete(item->attributes);
     free(item);
+    item = NULL;
 }
 
 // Print HAEntity

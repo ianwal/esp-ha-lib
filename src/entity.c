@@ -20,6 +20,24 @@ void upload_entity_data(char* entity_name, char* friendly_entity_name, char* uni
     post_req(path, api_req);
 }
 
+// ex. unit_of_measurement, friendly_name
+void add_entity_attribute(char* key, char* value, HAEntity* entity)
+{
+    if (!entity){
+        ESP_LOGE(TAG, "BAD ENTITY");
+        return;
+    }
+    
+    if(!entity->attributes)
+    {
+        ESP_LOGE(TAG, "Created array, YAY!");
+        entity->attributes = cJSON_CreateObject();
+    }
+    
+    ESP_LOGE(TAG, "Adding item to array");
+    cJSON_AddItemToObject(entity->attributes, key, cJSON_CreateString(value));
+}
+
 static char* get_entity_req(char* entity_name){
     char path[256+sizeof(statespath)];
     snprintf(path, 256+sizeof(statespath), "%s%s", statespath, entity_name);
@@ -135,17 +153,15 @@ void print_HAEntity(HAEntity* item)
     if (item->state) {
         ESP_LOGI(TAG, "state: %s", item->state);
     } else {
-        // Should this just print something like "no state"? Printing "state:" makes it consistent with the other attributes.
-        ESP_LOGI(TAG, "state:");
+        ESP_LOGI(TAG, "no state");
     }
 
     if (cJSON_IsNull(item->attributes) || !cJSON_IsObject(item->attributes)) {
-        ESP_LOGI(TAG, "attributes:");
+        ESP_LOGI(TAG, "no attributes");
     } else {
-        for(int i = 0; i < cJSON_GetArraySize(item->attributes); i++)
-        {
-            ESP_LOGI(TAG, "attribute %d: %s", i+1, cJSON_GetArrayItem(item->attributes, i)->string);
-        }
+        char* jsonstr = cJSON_Print(item->attributes);
+        ESP_LOGE(TAG, "Attributes - %s", jsonstr);
+        free(jsonstr);
     }
 
     ESP_LOGI(TAG, "last_changed: %s", item->last_changed);

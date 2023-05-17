@@ -71,7 +71,7 @@ void test_print_HAEntity(void)
 }
 
 // Tests printing a real HAEntity from Home Assistant
-// Needs entity "sensor.esphalibtest" or a substitute on a live home assistant
+// Needs entity "sensor.esphalibtest" or a substitute on a live home assistant to connect to
 void test_print_real_HAEntity(void)
 {
     HAEntity* entity = malloc(sizeof(HAEntity));
@@ -80,10 +80,29 @@ void test_print_real_HAEntity(void)
     HAEntity_destroy(entity);
 }
 
+// Tests adding a new entity attribute to an HAEntity
+void test_add_entity_attribute(void)
+{
+    HAEntity* entity = malloc(sizeof(HAEntity));
+    char* entity_name = "sensor.randomsensortest";
+    char* friendly_entity_name = "esp ha lib sensor test";
+    char* unit_of_measurement = "test units";
+    add_entity_attribute("entity_name", entity_name, entity);
+    add_entity_attribute("friendly_entity_name", friendly_entity_name, entity);
+    add_entity_attribute("unit_of_measurement", unit_of_measurement, entity);
+    
+    TEST_ASSERT_EQUAL_STRING(entity_name, cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "entity_name")));
+    TEST_ASSERT_EQUAL_STRING(friendly_entity_name, cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "friendly_entity_name")));
+    TEST_ASSERT_EQUAL_STRING(unit_of_measurement, cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "unit_of_measurement")));
+    
+    HAEntity_destroy(entity);
+}
+
 int runUnityTests(void) {
     UNITY_BEGIN();
-    RUN_TEST(test_api_running);
+    RUN_TEST(test_add_entity_attribute);
     RUN_TEST(test_print_HAEntity);
+    RUN_TEST(test_api_running);
     RUN_TEST(test_entity_uploadreceive);
     RUN_TEST(test_print_real_HAEntity);
     return UNITY_END();

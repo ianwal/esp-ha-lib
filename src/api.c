@@ -175,5 +175,6 @@ bool get_api_status(void)
         return true;
     }
 
+    cJSON_Delete(jsonreq);
     return false;
 }

@@ -168,7 +168,7 @@ void print_HAEntity(HAEntity* item)
         ESP_LOGI(TAG, "no attributes");
     } else {
         char* jsonstr = cJSON_Print(item->attributes);
-        ESP_LOGE(TAG, "Attributes - %s", jsonstr);
+        ESP_LOGI(TAG, "Attributes - %s", jsonstr);
         free(jsonstr);
     }
 

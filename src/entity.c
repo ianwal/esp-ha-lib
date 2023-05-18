@@ -147,7 +147,7 @@ void HAEntity_destroy(HAEntity* item)
 }
 
 // Print HAEntity
-void print_HAEntity(HAEntity* item)
+void HAEntity_print(HAEntity* item)
 {
     ESP_LOGV(TAG, "Printing HAEntity");
 

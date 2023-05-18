@@ -19,4 +19,4 @@ void post_entity(HAEntity* entity);
 void set_ha_url(const char* url);
 void set_long_lived_access_token(const char* new_long_lived_access_token);
 
-void print_HAEntity(HAEntity* item);
+void HAEntity_print(HAEntity* item);

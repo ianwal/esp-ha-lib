@@ -17,10 +17,9 @@
 
 #include "driver/gpio.h"
 
-#include "entity.h"
+#include "esp_ha_lib.h"
 #include "wifi.h"
 #include "secrets.h"
-#include "api.h"
 
 #include <unity.h>
 
@@ -63,26 +62,26 @@ void test_api_running(void) {
     TEST_ASSERT_MESSAGE(get_api_status(), "API is not accessible and/or not running.");
 }
 
-void test_print_HAEntity(void)
+void test_HAEntity_print(void)
 {
     HAEntity entity = {.entity_id="print_test1", .last_updated="2021-02-12T10:41:28.422190+00:00", .last_changed="2023-05-17T10:41:28.855123+00:00"};
     entity.attributes = cJSON_Parse("{\"unit_of_measurement\":\"Test Units\",\"friendly_name\":\"esp ha lib test\"}");
     entity.state = strdup("on!");
-    print_HAEntity(&entity);
+    HAEntity_print(&entity);
     
     cJSON_Delete(entity.attributes);
     free(entity.state);
 }
 
 // Tests printing a real HAEntity from Home Assistant
-// Needs entity "sensor.esphalibtest" or a substitute on a live home assistant to connect to
+// Needs entity "sun.sun" which I think is built in or a substitute on a live home assistant to connect to
 void test_print_real_HAEntity(void)
 {
     HAEntity* entity = malloc(sizeof(HAEntity));
     entity->state = NULL;
     entity->attributes = NULL;
-    entity = get_entity("sensor.esphalibtest");
-    print_HAEntity(entity);
+    entity = get_entity("sun.sun");
+    HAEntity_print(entity);
     HAEntity_destroy(entity);
 }
 
@@ -109,7 +108,7 @@ void test_add_entity_attribute(void)
 int runUnityTests(void) {
     UNITY_BEGIN();
     RUN_TEST(test_add_entity_attribute);
-    RUN_TEST(test_print_HAEntity);
+    RUN_TEST(test_HAEntity_print);
     RUN_TEST(test_api_running);
     RUN_TEST(test_entity_uploadreceive);
     RUN_TEST(test_print_real_HAEntity);

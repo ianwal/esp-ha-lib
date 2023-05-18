@@ -22,6 +22,16 @@ And then finally include:
 
 ## Usage
 
+Before doing anything, you must set your Home Assistant URL and [Long Lived Access Token](https://developers.home-assistant.io/docs/auth_api/#long-lived-access-token) in order to access the api.
+
+```c
+#define HA_URL <your url e.g. http://homeassistant.com>
+#define LONG_LIVED_ACCESS_TOKEN <your access token>
+
+set_ha_url(HA_URL);
+set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
+```
+
 ### Entities:
 
 Path: /api/states/<entity_id>
@@ -55,7 +65,7 @@ HAEntity_destroy(entity);
 
 Output:
 
-```c
+```sh
 Entity: Attributes -
 
 {

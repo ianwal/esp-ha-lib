@@ -12,18 +12,50 @@ char* ha_url = NULL;
 // Set with set_long_lived_access_token
 char* long_lived_access_token = NULL;
 
+// Call this before doing anything with the library
+// Sets ha url e.g. "http://IP_ADDRESS:8123"
 void set_ha_url(const char* new_url)
 {
     free(ha_url);
-    ha_url = strdup(new_url);
-    ESP_LOGI(TAG, "Set new ha_url to: %s", ha_url);
+    
+    if (!new_url) {
+        ESP_LOGE(TAG, "Failed to set ha_url. new_url is NULL.");
+        return;
+    }
+
+    size_t len = strlen(new_url);
+    ha_url = strndup(new_url, len);
+
+    if(!ha_url) {
+        ESP_LOGE(TAG, "Failed to set ha_url. strndup failed.");
+        return;
+    }
+
+    // Check for leading slash and remove it if present
+    if (ha_url[len-1] == '/')
+        ha_url[len-1] = '\0';
+
+    ESP_LOGV(TAG, "Set new ha_url to: %s", ha_url);
 }
 
+// Call this before doing anything with the library
 void set_long_lived_access_token(const char* new_long_lived_access_token)
 {
     free(long_lived_access_token);
+    
+    if (!new_long_lived_access_token) {
+        ESP_LOGE(TAG, "Failed to set long_lived_access_token. new_long_lived_access_token is NULL.");
+        return;
+    }
+    
     long_lived_access_token = strdup(new_long_lived_access_token);
-    ESP_LOGI(TAG, "Set new LLAT to: %s", long_lived_access_token);
+    
+    if(!long_lived_access_token) {
+        ESP_LOGE(TAG, "Failed to set long_lived_access_token. strndup failed.");
+        return;
+    }
+
+    ESP_LOGV(TAG, "Set new LLAT to: %s", long_lived_access_token);
 }
 
 void post_req(char* path, char* data) {

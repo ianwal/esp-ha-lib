@@ -65,7 +65,7 @@ static HAEntity* parse_entity_str(char* entitystr)
     if (!entitystr)
         return NULL;
 
-    HAEntity* entity = malloc(sizeof(HAEntity));
+    HAEntity* entity = HAEntity_create();
     if (!entity) {
         ESP_LOGE(TAG, "Failed to malloc HAEntity.");
         return NULL;
@@ -77,7 +77,6 @@ static HAEntity* parse_entity_str(char* entitystr)
     cJSON* state = cJSON_GetObjectItem(jsonreq, "state");
     if (cJSON_IsNull(state) || !cJSON_IsString(state)) {
         ESP_LOGI(TAG, "Entity has no state or is not a string.");
-        entity->state = NULL;
     } else {
         entity->state = strdup(cJSON_GetStringValue(state));
     }
@@ -113,7 +112,6 @@ static HAEntity* parse_entity_str(char* entitystr)
     cJSON* attributes = cJSON_GetObjectItem(jsonreq, "attributes");
     if (cJSON_IsNull(attributes) || !cJSON_IsObject(attributes)) {
         ESP_LOGI(TAG, "Entity has no attributes or it is not a cJSON object.");
-        entity->attributes = NULL;
     } else {
         entity->attributes = cJSON_Duplicate(attributes, true);
     }
@@ -134,6 +132,15 @@ HAEntity* get_entity(char* entity_name)
     }
 
     return entity;
+}
+
+// Create a new HAEntity
+HAEntity* HAEntity_create(void)
+{
+    HAEntity* newEntity = malloc(sizeof(HAEntity));
+    newEntity->state = NULL;
+    newEntity->attributes = NULL;
+    return newEntity;
 }
 
 // Frees HAEntity

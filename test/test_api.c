@@ -33,9 +33,8 @@ void test_entity_uploadreceive(void){
     char* unit_of_measurement = "Test Units";
     float state = (esp_random() % 100);
     
-    HAEntity* entity = malloc(sizeof(HAEntity));
+    HAEntity* entity = HAEntity_create();
     entity->state = malloc(8);
-    entity->attributes = NULL; 
     snprintf(entity->state, 8, "%.2f", state);
     strcpy(entity->entity_id, entity_id);
     add_entity_attribute("friendly_name", friendly_entity_name, entity);
@@ -77,9 +76,7 @@ void test_HAEntity_print(void)
 // Needs entity "sun.sun" which I think is built in or a substitute on a live home assistant to connect to
 void test_print_real_HAEntity(void)
 {
-    HAEntity* entity = malloc(sizeof(HAEntity));
-    entity->state = NULL;
-    entity->attributes = NULL;
+    HAEntity* entity = HAEntity_create();
     entity = get_entity("sun.sun");
     HAEntity_print(entity);
     HAEntity_destroy(entity);
@@ -88,9 +85,7 @@ void test_print_real_HAEntity(void)
 // Tests adding a new entity attribute to an HAEntity
 void test_add_entity_attribute(void)
 {
-    HAEntity* entity = malloc(sizeof(HAEntity));
-    entity->state = NULL;
-    entity->attributes = NULL;
+    HAEntity* entity = HAEntity_create();
     char* entity_name = "sensor.randomsensortest";
     char* friendly_entity_name = "esp ha lib sensor test";
     char* unit_of_measurement = "test units";

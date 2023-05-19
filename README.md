@@ -48,10 +48,8 @@ Attributes can be added as a key:value pair using add_entity_attribute()
 To get an entity with the entity_id sun.sun
 
 ```c
-// Instantiate
-HAEntity* entity = malloc(sizeof(HAEntity));
-entity->state = NULL;
-entity->attributes = NULL;
+// Create new entity
+HAEntity* entity = HAEntity_create();
 
 // GET request
 entity = get_entity("sun.sun");

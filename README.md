@@ -98,7 +98,7 @@ GET
 - [ ] /api/calendars/\<calendar entity_id\>
 
 POST
-- [ ] /api/states/\<entity_id\>
+- [x] /api/states/\<entity_id\>
 - [ ] /api/events/\<event_type\>
 - [ ] /api/services/\<domain\>/\<service\>
 - [ ] /api/template

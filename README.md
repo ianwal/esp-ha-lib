@@ -100,7 +100,7 @@ GET
 
 POST
 - [x] /api/states/\<entity_id\>
-- [ ] /api/events/\<event_type\>
+- [x] /api/events/\<event_type\>
 - [ ] /api/services/\<domain\>/\<service\>
 - [ ] /api/template
 - [ ] /api/config/core/check_config

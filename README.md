@@ -87,6 +87,7 @@ Entity: Attributes -
 GET
 - [x] /api/
 - [ ] /api/config
+- [x] /api/events
 - [ ] /api/services
 - [ ] /api/history/period/\<timestamp\>
 - [ ] /api/logbook/\<timestamp\>

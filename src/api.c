@@ -2,6 +2,8 @@
 #include "esp_http_client.h"
 #include "cJSON.h"
 #include "api.h"
+#include <stdlib.h>
+#include <stdbool.h>
 
 #define MAX_HTTP_OUTPUT_BUFFER 1024
 
@@ -58,6 +60,7 @@ void set_long_lived_access_token(const char* new_long_lived_access_token)
     ESP_LOGV(TAG, "Set new LLAT to: %s", long_lived_access_token);
 }
 
+// TODO: Add response, for things like /api/events/<event_type>
 void post_req(char* path, char* data) {
     if(!ha_url || !long_lived_access_token){
         ESP_LOGE(TAG, "Failed to upload data: ha_url or access token not set yet");

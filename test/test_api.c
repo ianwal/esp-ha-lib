@@ -22,6 +22,7 @@
 #include "secrets.h"
 
 #include <unity.h>
+#include <stdlib.h>
 
 static const char *TAG = "TESTING";
 
@@ -100,6 +101,21 @@ void test_add_entity_attribute(void)
     HAEntity_destroy(entity);
 }
 
+void test_get_events()
+{
+    HAEvent* events = get_events();
+    //for(int i = 0; i < 19; i++)
+    //{
+    //    ESP_LOGI(TAG, "{%s, %d}", events[i].event, events[i].listener_count);
+    //}
+    free(events);
+}
+
+void test_post_event()
+{
+    post_event("event.test", NULL);
+}
+
 int runUnityTests(void) {
     UNITY_BEGIN();
     RUN_TEST(test_add_entity_attribute);
@@ -107,6 +123,8 @@ int runUnityTests(void) {
     RUN_TEST(test_api_running);
     RUN_TEST(test_entity_uploadreceive);
     RUN_TEST(test_print_real_HAEntity);
+    RUN_TEST(test_get_events);
+    RUN_TEST(test_post_event);
     return UNITY_END();
 }
 

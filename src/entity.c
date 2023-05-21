@@ -1,8 +1,11 @@
 #include "esp_log.h"
-#include "esp_http_client.h"
 #include "entity.h"
 #include "cJSON.h"
 #include "api.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdio.h>
 
 static const char *TAG = "Entity";
 
@@ -25,6 +28,7 @@ void post_entity(HAEntity* entity){
     
     post_req(path, jsonstr);
     free(jsonstr);
+    cJSON_Delete(json_api_req);
 }
 
 // ex. unit_of_measurement, friendly_name

@@ -1,4 +1,5 @@
 #pragma once
+#include <stdbool.h>
 
 extern char* ha_url;
 extern char* long_lived_access_token;

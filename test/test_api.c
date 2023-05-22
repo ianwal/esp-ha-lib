@@ -51,8 +51,8 @@ void test_entity_uploadreceive(void){
     // HA only stores floats to 2 decimal places it seems
     float epsilon = 1e-2;
 
-    HAEntity_destroy(entity);
-    HAEntity_destroy(newEntity);
+    HAEntity_Delete(entity);
+    HAEntity_Delete(newEntity);
     TEST_ASSERT_FLOAT_WITHIN(epsilon, state, fstate);
 }
 
@@ -80,7 +80,7 @@ void test_print_real_HAEntity(void)
     HAEntity* entity = HAEntity_create();
     entity = get_entity("sun.sun");
     HAEntity_print(entity);
-    HAEntity_destroy(entity);
+    HAEntity_Delete(entity);
 }
 
 // Tests adding a new entity attribute to an HAEntity
@@ -98,17 +98,34 @@ void test_add_entity_attribute(void)
     TEST_ASSERT_EQUAL_STRING(friendly_entity_name, cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "friendly_entity_name")));
     TEST_ASSERT_EQUAL_STRING(unit_of_measurement, cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "unit_of_measurement")));
     
-    HAEntity_destroy(entity);
+    HAEntity_Delete(entity);
 }
 
 void test_get_events()
 {
-    HAEvent* events = get_events();
-    //for(int i = 0; i < 19; i++)
-    //{
-    //    ESP_LOGI(TAG, "{%s, %d}", events[i].event, events[i].listener_count);
-    //}
-    free(events);
+    cJSON* events = get_events();
+    
+    char* jsonstr = cJSON_Print(events);
+    ESP_LOGV(TAG, "Events - %s", jsonstr);
+    
+    HAEvent event = get_event_from_events("homeassistant_start", events);
+    ESP_LOGV(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
+
+    free(jsonstr);
+    
+    cJSON_Delete(events);
+}
+
+void test_get_event_from_events()
+{
+    cJSON* events = get_events();
+    
+    HAEvent event = get_event_from_events("homeassistant_start", events);
+    TEST_ASSERT_EQUAL_STRING("homeassistant_start", event.event);
+    
+    ESP_LOGV(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
+    
+    cJSON_Delete(events);
 }
 
 void test_post_event()
@@ -124,6 +141,7 @@ int runUnityTests(void) {
     RUN_TEST(test_entity_uploadreceive);
     RUN_TEST(test_print_real_HAEntity);
     RUN_TEST(test_get_events);
+    RUN_TEST(test_get_event_from_events);
     RUN_TEST(test_post_event);
     return UNITY_END();
 }

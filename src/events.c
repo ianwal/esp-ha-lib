@@ -9,7 +9,7 @@
 
 static const char* TAG = "Events";
 
-#define eventspath "/api/events/"
+#define eventspath "/api/events"
 
 static char* get_events_req(void)
 {
@@ -23,35 +23,41 @@ static char* get_events_req(void)
     return req;
 }
 
-static HAEvent* parse_events_str(char* eventsstr)
+static cJSON* parse_events_str(char* eventsstr)
 {
     if (!eventsstr)
         return NULL;
 
     cJSON* jsonreq = cJSON_Parse(eventsstr);
+    return jsonreq;
+}
+
+cJSON* get_events(void)
+{
+    char* eventsstr = get_events_req();
+    cJSON* events = parse_events_str(eventsstr);
     free(eventsstr);
-
-    HAEvent* events = malloc(sizeof(HAEvent) * cJSON_GetArraySize(jsonreq));
-    //ESP_LOGI(TAG, "ARRAY SIZE %d", cJSON_GetArraySize(jsonreq));
-
-    for(int i = 0; i < cJSON_GetArraySize(jsonreq); i++) {
-        HAEvent event;
-        cJSON* item = cJSON_GetArrayItem(jsonreq, i);
-        strcpy(event.event, cJSON_GetStringValue(cJSON_GetObjectItem(item, "event")));
-        //ESP_LOGI(TAG, "event %s", event.event);
-        event.listener_count = (unsigned int)cJSON_GetNumberValue(cJSON_GetObjectItem(item, "listener_count"));
-        //ESP_LOGI(TAG, "listener_count %d", event.listener_count);
-        events[i] = event;
-    }
-
-    cJSON_Delete(jsonreq);
     return events;
 }
 
-HAEvent* get_events(void)
+// Get single event by name from a cJSON array of events
+HAEvent get_event_from_events(char* event_type, cJSON* events)
 {
-    char* eventstr = get_events_req();
-    return parse_events_str(eventstr);
+    // TODO: Add safety checks for cJSON object (isarray, etc.)   
+    // Should the event.event be set to something like "Not Found" as the default case?
+    HAEvent event = {.event="", .listener_count=0};
+    for(int i = 0; i < cJSON_GetArraySize(events); i++) {
+        cJSON* item = cJSON_GetArrayItem(events, i);
+        char* itemstring = cJSON_GetStringValue(cJSON_GetObjectItem(item, "event"));
+        // Check if event_type matches the event name
+        if(strcmp(itemstring, event_type) == 0) {
+            strcpy(event.event, itemstring);
+            event.listener_count = (unsigned int)cJSON_GetNumberValue(cJSON_GetObjectItem(item, "listener_count"));
+            break;
+        }
+    }
+
+    return event;
 }
 
 // Create API request to home assistant with events data  

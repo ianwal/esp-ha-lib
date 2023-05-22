@@ -5,5 +5,6 @@ typedef struct {
     unsigned int listener_count;
 } HAEvent;
 
-HAEvent* get_events(void);
+cJSON* get_events(void);
+HAEvent get_event_from_events(char* event_type, cJSON* events);
 void post_event(char* event_type, cJSON* event_data);

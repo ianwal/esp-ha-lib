@@ -10,7 +10,7 @@ typedef struct {
     char last_updated[48]; // ISO 8601 as well
 } HAEntity;
 
-void HAEntity_destroy(HAEntity* item);
+void HAEntity_Delete(HAEntity* item);
 void add_entity_attribute(char* key, char* value, HAEntity* entity);
 HAEntity* get_entity(char* entity_name);
 

@@ -148,7 +148,7 @@ HAEntity* HAEntity_create(void)
 }
 
 // Frees HAEntity
-void HAEntity_destroy(HAEntity* item)
+void HAEntity_Delete(HAEntity* item)
 {
     free(item->state);
     item->state = NULL;

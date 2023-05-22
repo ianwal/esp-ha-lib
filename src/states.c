@@ -1,5 +1,5 @@
 #include "esp_log.h"
-#include "entity.h"
+#include "states.h"
 #include "cJSON.h"
 #include "api.h"
 #include <stdlib.h>
@@ -7,9 +7,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-static const char *TAG = "Entity";
+static const char *TAG = "States";
 
-#define statespath "/api/states/"
+#define statespath "/api/states"
 
 // Create API request to home assistant with entity data  
 void post_entity(HAEntity* entity){
@@ -21,8 +21,8 @@ void post_entity(HAEntity* entity){
     char* jsonstr = cJSON_Print(json_api_req);
     //ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
 
-    char path[sizeof(statespath)+strlen(entity->entity_id)+1];
-    snprintf(path, sizeof(statespath)+strlen(entity->entity_id)+1, "%s%s", statespath, entity->entity_id);
+    char path[sizeof(statespath)+strlen(entity->entity_id)+1+1]; // +1 for the / in the path
+    snprintf(path, sizeof(statespath)+strlen(entity->entity_id)+1+1, "%s/%s", statespath, entity->entity_id);
     
     //ESP_LOGI(TAG, "Path - %s", path);
     
@@ -49,8 +49,8 @@ void add_entity_attribute(char* key, char* value, HAEntity* entity)
 }
 
 static char* get_entity_req(char* entity_name){
-    char path[256+sizeof(statespath)];
-    snprintf(path, 256+sizeof(statespath), "%s%s", statespath, entity_name);
+    char path[256+sizeof(statespath)+1]; // +1 for the / in the path
+    snprintf(path, 256+sizeof(statespath)+1, "%s/%s", statespath, entity_name);
     char* req = get_req(path);
     
     if (!req) {
@@ -185,4 +185,35 @@ void HAEntity_print(HAEntity* item)
 
     ESP_LOGI(TAG, "last_changed: %s", item->last_changed);
     ESP_LOGI(TAG, "last_updated: %s", item->last_updated);
+}
+
+static char* get_states_req(void)
+{
+    char* req = get_req(statespath);
+    
+    if (!req) {
+        ESP_LOGE(TAG, "API states GET request failed");
+        return NULL;
+    }
+
+    return req;
+}
+
+static cJSON* parse_states_str(char* statesstr)
+{
+    if (!statesstr)
+        return NULL;
+
+    cJSON* jsonreq = cJSON_Parse(statesstr);
+    return jsonreq;
+}
+
+// Get cJSON of all the states from Home Assistant
+// Note: States might be really big. Mine is around 2400 char on a small install.
+cJSON* get_states(void)
+{
+    char* statesstr = get_states_req();
+    cJSON* states = parse_states_str(statesstr);
+    free(statesstr);
+    return states;
 }

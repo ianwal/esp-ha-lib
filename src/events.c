@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "esp_log.h"
-#include "entity.h"
 #include "cJSON.h"
 #include "api.h"
 #include "events.h"

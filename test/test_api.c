@@ -143,6 +143,16 @@ void test_get_config()
     cJSON_Delete(config);
 }
 
+void test_get_states()
+{
+    cJSON* states = get_states();
+    char* jsonstr = cJSON_Print(states);
+    ESP_LOGV(TAG, "Config - %s", jsonstr);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(0, cJSON_GetArraySize(states), "States GET failed.");
+    free(jsonstr);
+    cJSON_Delete(states);
+}
+
 int runUnityTests(void) {
     UNITY_BEGIN();
     RUN_TEST(test_add_entity_attribute);
@@ -154,6 +164,7 @@ int runUnityTests(void) {
     RUN_TEST(test_get_event_from_events);
     RUN_TEST(test_post_event);
     RUN_TEST(test_get_config);
+    RUN_TEST(test_get_states);
     return UNITY_END();
 }
 

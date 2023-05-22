@@ -1,5 +1,4 @@
 #include "esp_log.h"
-#include "entity.h"
 #include "cJSON.h"
 #include "api.h"
 #include <stdlib.h>

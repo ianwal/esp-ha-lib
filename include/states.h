@@ -22,3 +22,5 @@ void set_long_lived_access_token(const char* new_long_lived_access_token);
 HAEntity* HAEntity_create(void);
 
 void HAEntity_print(HAEntity* item);
+
+cJSON* get_states(void);

@@ -133,6 +133,16 @@ void test_post_event()
     post_event("event.test", NULL);
 }
 
+void test_get_config()
+{
+    cJSON* config = get_config();
+    char* jsonstr = cJSON_Print(config);
+    ESP_LOGV(TAG, "Config - %s", jsonstr);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(0, cJSON_GetArraySize(config), "Config GET failed.");
+    free(jsonstr);
+    cJSON_Delete(config);
+}
+
 int runUnityTests(void) {
     UNITY_BEGIN();
     RUN_TEST(test_add_entity_attribute);
@@ -143,6 +153,7 @@ int runUnityTests(void) {
     RUN_TEST(test_get_events);
     RUN_TEST(test_get_event_from_events);
     RUN_TEST(test_post_event);
+    RUN_TEST(test_get_config);
     return UNITY_END();
 }
 

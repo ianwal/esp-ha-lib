@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define MAX_HTTP_OUTPUT_BUFFER 1024
-
 static const char* TAG = "API";
 
 // Set with set_ha_url()
@@ -118,12 +116,8 @@ char* get_req(char* path)
     }
     
     
-    char* local_response_buffer = malloc(MAX_HTTP_OUTPUT_BUFFER);
-
-    if (!local_response_buffer) {
-        ESP_LOGE(TAG, "Buffer malloc failed");
-        return NULL;
-    }
+    char* local_response_buffer = NULL;
+    
 
     // Create API URL. Will look something like http://HA_URL/api/states/sensor.entity_name
     char api_URL[128];
@@ -158,9 +152,17 @@ char* get_req(char* path)
     esp_err_t err = esp_http_client_open(client, 0);
     if (err == ESP_OK) {
         esp_err_t fetcherr = esp_http_client_fetch_headers(client);
-        if(fetcherr != ESP_FAIL){ 
-            esp_http_client_read_response(client, local_response_buffer, MAX_HTTP_OUTPUT_BUFFER);
-            ESP_LOGV(TAG, "Read %s, \nSize: %lld", local_response_buffer, esp_http_client_get_content_length(client));
+        if(fetcherr != ESP_FAIL){
+            int64_t headerSize = esp_http_client_get_content_length(client);
+            local_response_buffer = malloc(headerSize);
+            //ESP_LOGI(TAG, "Buffer size %lld", esp_http_client_get_content_length(client));
+            if (!local_response_buffer) {
+                ESP_LOGE(TAG, "Buffer malloc failed");
+                failed = true;
+            } else {
+                esp_http_client_read_response(client, local_response_buffer, headerSize);
+                ESP_LOGV(TAG, "Read %s, \nSize: %lld", local_response_buffer, headerSize);
+            }
         } else {
             ESP_LOGE(TAG, "Failed to fetch request: %s", esp_err_to_name(fetcherr));
             failed = true;

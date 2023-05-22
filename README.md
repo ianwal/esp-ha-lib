@@ -91,7 +91,7 @@ GET
 - [ ] /api/services
 - [ ] /api/history/period/\<timestamp\>
 - [ ] /api/logbook/\<timestamp\>
-- [ ] /api/states
+- [x] /api/states
 - [x] /api/states/\<entity_id\>
 - [ ] /api/error_log
 - [ ] /api/camera_proxy/\<camera entity_id\>

@@ -78,7 +78,7 @@ void post_event(char* event_type, cJSON* event_data)
     
     //ESP_LOGI(TAG, "Path - %s", path);
     
-    post_req(path, jsonstr);
+    post_req(path, jsonstr, false);
     free(jsonstr);
     cJSON_Delete(json_api_req);
 }

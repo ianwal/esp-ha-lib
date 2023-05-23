@@ -8,5 +8,5 @@ void set_ha_url(const char* new_url);
 void set_long_lived_access_token(const char* new_long_lived_access_token);
 
 char* get_req(char* path);
-void post_req(char* path, char* data);
+char* post_req(char* path, char* data, bool return_response);
 bool get_api_status(void);

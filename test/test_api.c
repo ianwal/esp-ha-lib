@@ -153,6 +153,12 @@ void test_get_states()
     cJSON_Delete(states);
 }
 
+void test_post_config()
+{
+    // from good home_assistant config. if config is bad this test will fail and it's not necessarily the fault of the library
+    TEST_ASSERT_TRUE(check_config());
+}
+
 int runUnityTests(void) {
     UNITY_BEGIN();
     RUN_TEST(test_add_entity_attribute);
@@ -165,6 +171,7 @@ int runUnityTests(void) {
     RUN_TEST(test_post_event);
     RUN_TEST(test_get_config);
     RUN_TEST(test_get_states);
+    RUN_TEST(test_post_config);
     return UNITY_END();
 }
 

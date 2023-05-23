@@ -1,5 +1,5 @@
 # esp-ha-lib
-WIP Library for interfacing with Home Assistants REST API using cJSON
+WIP library for interfacing with [Home Assistants REST API](https://developers.home-assistant.io/docs/api/rest/) using [cJSON](https://github.com/DaveGamble/cJSON)
 
 
 
@@ -103,7 +103,7 @@ POST
 - [x] /api/events/\<event_type\>
 - [ ] /api/services/\<domain\>/\<service\>
 - [ ] /api/template
-- [ ] /api/config/core/check_config
+- [x] /api/config/core/check_config
 - [ ] /api/intent/handle
 
 [from home assistant docs](https://developers.home-assistant.io/docs/api/rest/)

@@ -26,7 +26,7 @@ void post_entity(HAEntity* entity){
     
     //ESP_LOGI(TAG, "Path - %s", path);
     
-    post_req(path, jsonstr);
+    post_req(path, jsonstr, false);
     free(jsonstr);
     cJSON_Delete(json_api_req);
 }

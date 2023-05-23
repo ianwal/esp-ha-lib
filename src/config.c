@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #define CONFIGPATH "/api/config"
+#define CHECKCONFIGPATH "/api/config/core/check_config"
 
 static const char *TAG = "Config";
 
@@ -37,4 +38,22 @@ cJSON* get_config(void)
     cJSON* config = parse_config_str(configstr);
     free(configstr);
     return config;
+}
+
+// Returns true if the config is good
+bool check_config(void)
+{
+    char* ok_response = "{\"result\":\"valid\",\"errors\":null}";
+    char* response = post_req(CHECKCONFIGPATH, NULL, true);
+
+    bool result;
+    if (response && strcmp(ok_response, response) == 0) {
+        ESP_LOGV(TAG, "%s", response);
+        result = true;
+    } else {
+        result = false;
+    }
+   
+    free(response);
+    return result;
 }

@@ -58,11 +58,10 @@ void set_long_lived_access_token(const char* new_long_lived_access_token)
     ESP_LOGV(TAG, "Set new LLAT to: %s", long_lived_access_token);
 }
 
-// TODO: Add response, for things like /api/events/<event_type>
-void post_req(char* path, char* data) {
+char* post_req(char* path, char* data, bool return_response) {
     if(!ha_url || !long_lived_access_token){
         ESP_LOGE(TAG, "Failed to upload data: ha_url or access token not set yet");
-        return;
+        return NULL;
     }
 
     // Create API URL. Will look something like http://HA_URL/api/states/entity.entity_NAME
@@ -74,7 +73,7 @@ void post_req(char* path, char* data) {
     char* auth_data = malloc(strlen(bearer) + strlen(long_lived_access_token)+1);
     if(!auth_data) {
         ESP_LOGE(TAG, "auth_data malloc failed.");
-        return;
+        return NULL;
     }
     memcpy(auth_data, bearer, strlen(bearer));
     memcpy(auth_data + strlen(bearer), long_lived_access_token, strlen(long_lived_access_token)+1);
@@ -89,23 +88,65 @@ void post_req(char* path, char* data) {
         .skip_cert_common_name_check = true,
         .disable_auto_redirect = false,
     };
-    
+
+    char* response_buffer = NULL;
+
     ESP_LOGV(TAG, "Attempting connection to %s", api_URL);
 
     esp_http_client_handle_t client = esp_http_client_init(&home_assistant_config);
     esp_http_client_set_header(client, "Authorization", auth_data);
     esp_http_client_set_header(client, "Content-Type", "application/json");
-    esp_http_client_set_post_field(client, data, strlen(data));
-
-    if(esp_http_client_perform(client) == ESP_OK){
-        ESP_LOGV(TAG, "Sent %s to %s", data, api_URL);
+    
+    if (data)
+        esp_http_client_set_post_field(client, data, strlen(data));
+    
+    //esp_err_t err = esp_http_client_perform(client);
+    // POST data
+    esp_err_t err = esp_http_client_perform(client);
+    if(err == ESP_OK) {
+        if(data)
+            ESP_LOGV(TAG, "Sent %s to %s", data, api_URL);
     } else {
         ESP_LOGE(TAG, "Could not send upload entity data.");
+    }
+
+    // POST Response handling for when return_response=true
+    if (return_response) {
+        if(err == ESP_OK) { // only get response if the above post was OK
+            // Receive POST response
+            err = esp_http_client_open(client, 0);
+            if(err == ESP_OK){
+                esp_http_client_fetch_headers(client);
+                if (return_response) {
+                    int64_t content_length = esp_http_client_get_content_length(client);
+                    response_buffer = malloc(content_length+1);
+                    if (response_buffer) {
+                        esp_err_t post_response = esp_http_client_read_response(client, response_buffer, content_length);
+                        if (post_response != ESP_FAIL) {
+                            response_buffer[content_length] = '\0'; // ensure response is null-terminated
+                            ESP_LOGV(TAG, "Content length %lld Read: %s", content_length, response_buffer);
+                        } else {
+                            ESP_LOGE(TAG, "POST Response failed %s", esp_err_to_name(post_response));
+                            free(response_buffer);
+                            response_buffer = NULL;
+                        }
+                    }
+                }
+            } else {
+                ESP_LOGE(TAG, "Could not send upload entity data.");
+            }
+        }
     }
 
     free(auth_data);
     esp_http_client_close(client);
     esp_http_client_cleanup(client);
+
+    if (response_buffer) {
+        return response_buffer;
+    } else {
+        return NULL;
+    }
 }
 
 char* get_req(char* path)
@@ -153,15 +194,16 @@ char* get_req(char* path)
     if (err == ESP_OK) {
         esp_err_t fetcherr = esp_http_client_fetch_headers(client);
         if(fetcherr != ESP_FAIL){
-            int64_t headerSize = esp_http_client_get_content_length(client);
-            local_response_buffer = malloc(headerSize);
+            int64_t content_length = esp_http_client_get_content_length(client);
+            local_response_buffer = malloc(content_length+1);
             //ESP_LOGI(TAG, "Buffer size %lld", esp_http_client_get_content_length(client));
             if (!local_response_buffer) {
                 ESP_LOGE(TAG, "Buffer malloc failed");
                 failed = true;
             } else {
-                esp_http_client_read_response(client, local_response_buffer, headerSize);
-                ESP_LOGV(TAG, "Read %s, \nSize: %lld", local_response_buffer, headerSize);
+                esp_http_client_read_response(client, local_response_buffer, content_length);
+                local_response_buffer[content_length] = '\0'; // ensure response is null-terminated
+                ESP_LOGV(TAG, "Read %s, \nSize: %lld", local_response_buffer, content_length);
             }
         } else {
             ESP_LOGE(TAG, "Failed to fetch request: %s", esp_err_to_name(fetcherr));
@@ -178,6 +220,7 @@ char* get_req(char* path)
 
     if (failed) {
         free(local_response_buffer);
+        local_response_buffer = NULL;
         return NULL;
     }
     

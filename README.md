@@ -58,7 +58,7 @@ entity = get_entity("sun.sun");
 HAEntity_print(entity);
 
 // Safely free
-HAEntity_destroy(entity);
+HAEntity_Delete(entity);
 ```
 
 Output:

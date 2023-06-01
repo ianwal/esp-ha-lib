@@ -8,9 +8,9 @@
 static const char* TAG = "API";
 
 // Set with set_ha_url()
-char* ha_url = "";
+char* ha_url = NULL;
 // Set with set_long_lived_access_token
-char* long_lived_access_token = "";
+char* long_lived_access_token = NULL;
 
 // Call this before doing anything with the library
 // Sets ha url e.g. "http://IP_ADDRESS:8123"

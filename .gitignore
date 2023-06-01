@@ -69,3 +69,12 @@ build
 
 #ESP32
 sdkconfig.*
+
+# Home Assistant Docker
+*.log
+*.log.*
+docker/config/.storage/auth
+docker/config/.storage/trace.saved_traces
+docker/config/.storage/repairs.issue_registry
+docker/config/home-assistant_v2.db*
+docker/config/.storage/core.restore_state

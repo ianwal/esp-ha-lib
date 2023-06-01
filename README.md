@@ -108,3 +108,31 @@ POST
 
 [from home assistant docs](https://developers.home-assistant.io/docs/api/rest/)
 
+## Development:
+
+Use the official Home Assistant docker container for testing.
+
+At this time, it is required for the ESP32 and development PC to share the same network. The ESP32 needs to be able to connect through Wi-Fi. I am looking into a way to circumvent this.
+
+Requirements: 
+- docker and docker-compose
+
+### Steps:
+
+1. Fill in your secrets in `src/secrets.h`, `test/secrets.h`, and `wifisecrets.h`
+    - `HA_URL` is the HOST PC IP e.g. http://192.168.1.72:8123
+        - I am looking into a way to avoid/automate this
+    - Long Lived Access Token is already generated and does not need to be filled in
+2. Launch the docker container by running 
+
+```sh
+docker run -d --name homeassistant --privileged --restart=unless-stopped -e TZ=America/Los_Angeles -v ./docker/config:/config -p 8123:8123 ghcr.io/home-assistant/home-assistant:stable`
+```
+
+3. Test using PlatformIO.
+
+If you would like to connect to the Home Assistant frontend:
+
+username: `user`
+
+password: `1`

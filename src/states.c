@@ -142,6 +142,9 @@ HAEntity* get_entity(char* entity_name)
 HAEntity* HAEntity_create(void)
 {
     HAEntity* newEntity = malloc(sizeof(HAEntity));
+    if(!newEntity) {
+        return NULL;
+    }
     newEntity->state = NULL;
     newEntity->attributes = NULL;
     return newEntity;

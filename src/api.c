@@ -8,20 +8,20 @@
 static const char* TAG = "API";
 
 // Set with set_ha_url()
-char* ha_url = NULL;
+char* ha_url = "";
 // Set with set_long_lived_access_token
-char* long_lived_access_token = NULL;
+char* long_lived_access_token = "";
 
 // Call this before doing anything with the library
 // Sets ha url e.g. "http://IP_ADDRESS:8123"
 void set_ha_url(const char* new_url)
 {
-    free(ha_url);
-    
-    if (!new_url) {
+    if (!new_url || strcmp(new_url, "")  == 0) {
         ESP_LOGE(TAG, "Failed to set ha_url. new_url is NULL.");
         return;
     }
+    
+    free(ha_url);
 
     size_t len = strlen(new_url);
     ha_url = strndup(new_url, len);
@@ -41,12 +41,12 @@ void set_ha_url(const char* new_url)
 // Call this before doing anything with the library
 void set_long_lived_access_token(const char* new_long_lived_access_token)
 {
-    free(long_lived_access_token);
-    
-    if (!new_long_lived_access_token) {
+    if (!new_long_lived_access_token || strcmp(new_long_lived_access_token, "")  == 0) {
         ESP_LOGE(TAG, "Failed to set long_lived_access_token. new_long_lived_access_token is NULL.");
         return;
     }
+    
+    free(long_lived_access_token);
     
     long_lived_access_token = strdup(new_long_lived_access_token);
     

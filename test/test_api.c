@@ -44,6 +44,7 @@ void test_entity_uploadreceive(void){
     post_entity(entity);
 
     HAEntity* newEntity = get_entity(entity_id);
+    TEST_ASSERT_NOT_NULL(newEntity);
     float fstate = strtof(newEntity->state, NULL);   
     
     ESP_LOGI(TAG, "Uploaded: %f, Received %f", state, fstate); 
@@ -79,6 +80,8 @@ void test_print_real_HAEntity(void)
 {
     HAEntity* entity = HAEntity_create();
     entity = get_entity("sun.sun");
+
+    TEST_ASSERT_NOT_NULL(entity);
     HAEntity_print(entity);
     HAEntity_delete(entity);
 }
@@ -106,6 +109,10 @@ void test_get_events()
     cJSON* events = get_events();
     
     char* jsonstr = cJSON_Print(events);
+    
+    // if jsonstr is null, means either get_events failed or somehow the json was parsed wrong
+    TEST_ASSERT_NOT_NULL_MESSAGE(jsonstr, "get_events() was NULL");
+
     ESP_LOGV(TAG, "Events - %s", jsonstr);
     
     HAEvent event = get_event_from_events("homeassistant_start", events);
@@ -159,8 +166,25 @@ void test_post_config()
     TEST_ASSERT_TRUE(check_config());
 }
 
+
+// Sets and checks to make sure the url and long lived access token are set before doing tests
+// Tests that follow will fail if they're not set which is good, but it's annoying to debug.
+void test_set_url_and_token()
+{
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(strcmp(HA_URL, ""), 0, "HA_URL is not set.");
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(strcmp(LONG_LIVED_ACCESS_TOKEN, ""), 0, "LONG_LIVED_ACCESS_TOKEN is not set.");
+    
+    set_ha_url(HA_URL);
+    set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
+
+    // check that set was successful
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(HA_URL, ha_url, "HA_URL failed to be set.");
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(LONG_LIVED_ACCESS_TOKEN, long_lived_access_token, "long_lived_access_token failed to be set.");
+}
+
 int runUnityTests(void) {
     UNITY_BEGIN();
+    RUN_TEST(test_set_url_and_token);
     RUN_TEST(test_add_entity_attribute);
     RUN_TEST(test_HAEntity_print);
     RUN_TEST(test_api_running);
@@ -177,9 +201,6 @@ int runUnityTests(void) {
 
 void app_main(void) {
     wifi_init_sta();
-
-    set_ha_url(HA_URL);
-    set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
 
     runUnityTests();
 }

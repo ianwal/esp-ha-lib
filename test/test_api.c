@@ -51,8 +51,8 @@ void test_entity_uploadreceive(void){
     // HA only stores floats to 2 decimal places it seems
     float epsilon = 1e-2;
 
-    HAEntity_Delete(entity);
-    HAEntity_Delete(newEntity);
+    HAEntity_delete(entity);
+    HAEntity_delete(newEntity);
     TEST_ASSERT_FLOAT_WITHIN(epsilon, state, fstate);
 }
 
@@ -80,7 +80,7 @@ void test_print_real_HAEntity(void)
     HAEntity* entity = HAEntity_create();
     entity = get_entity("sun.sun");
     HAEntity_print(entity);
-    HAEntity_Delete(entity);
+    HAEntity_delete(entity);
 }
 
 // Tests adding a new entity attribute to an HAEntity
@@ -98,7 +98,7 @@ void test_add_entity_attribute(void)
     TEST_ASSERT_EQUAL_STRING(friendly_entity_name, cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "friendly_entity_name")));
     TEST_ASSERT_EQUAL_STRING(unit_of_measurement, cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "unit_of_measurement")));
     
-    HAEntity_Delete(entity);
+    HAEntity_delete(entity);
 }
 
 void test_get_events()

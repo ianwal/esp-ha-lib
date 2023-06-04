@@ -147,6 +147,8 @@ HAEntity* HAEntity_create(void)
     }
     newEntity->state = NULL;
     newEntity->attributes = NULL;
+    strcpy(newEntity->last_changed, "");
+    strcpy(newEntity->last_updated, "");
     return newEntity;
 }
 
@@ -186,8 +188,17 @@ void HAEntity_print(HAEntity* item)
         free(jsonstr);
     }
 
-    ESP_LOGI(TAG, "last_changed: %s", item->last_changed);
-    ESP_LOGI(TAG, "last_updated: %s", item->last_updated);
+    if(item->last_changed[0]){
+        ESP_LOGI(TAG, "last_changed: %s", item->last_changed);
+    } else {
+        ESP_LOGI(TAG, "no last_changed");
+    }
+
+    if(item->last_updated[0]){
+        ESP_LOGI(TAG, "last_updated: %s", item->last_updated);
+    } else {
+        ESP_LOGI(TAG, "no last_updated");
+    }
 }
 
 static char* get_states_req(void)

@@ -126,7 +126,7 @@ Requirements:
 2. Launch the docker container by running 
 
 ```sh
-docker run -d --name homeassistant --privileged --restart=unless-stopped -e TZ=America/Los_Angeles -v ./docker/config:/config -p 8123:8123 ghcr.io/home-assistant/home-assistant:stable`
+docker run -d --name homeassistant --privileged --restart=unless-stopped -e TZ=America/Los_Angeles -v ./docker/config:/config -p 8123:8123 ghcr.io/home-assistant/home-assistant:stable
 ```
 
 3. Test using PlatformIO.

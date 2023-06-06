@@ -182,6 +182,27 @@ void test_set_url_and_token()
     TEST_ASSERT_EQUAL_STRING_MESSAGE(LONG_LIVED_ACCESS_TOKEN, long_lived_access_token, "long_lived_access_token failed to be set.");
 }
 
+void test_get_services()
+{
+    cJSON* services = get_services();
+
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(cJSON_IsNull(services), cJSON_NULL, "get_services() was NULL");
+
+    cJSON_Delete(services);
+}
+
+void test_get_service_from_domain()
+{
+    cJSON* services = get_services();
+    
+    HAService service = get_service_from_domain("homeassistant", services);
+    TEST_ASSERT_EQUAL_STRING("homeassistant", service.domain);
+    
+    ESP_LOGV(TAG, "service.domain: %s", service.domain);
+    
+    cJSON_Delete(services);
+}
+
 int runUnityTests(void) {
     UNITY_BEGIN();
     RUN_TEST(test_set_url_and_token);
@@ -196,6 +217,8 @@ int runUnityTests(void) {
     RUN_TEST(test_get_config);
     RUN_TEST(test_get_states);
     RUN_TEST(test_post_config);
+    //RUN_TEST(test_get_services);
+    //RUN_TEST(test_get_service_from_domain);
     return UNITY_END();
 }
 

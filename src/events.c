@@ -73,8 +73,8 @@ void post_event(char* event_type, cJSON* event_data)
     char* jsonstr = cJSON_Print(json_api_req);
     //ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
 
-    char path[sizeof(eventspath)+strlen(event_type)+1];
-    snprintf(path, sizeof(eventspath)+strlen(event_type)+1, "%s%s", eventspath, event_type);
+    char path[sizeof(eventspath)+strlen(event_type)+1+1];  // +1 for the / in the path
+    snprintf(path, sizeof(eventspath)+strlen(event_type)+1+1, "%s/%s", eventspath, event_type);
     
     //ESP_LOGI(TAG, "Path - %s", path);
     

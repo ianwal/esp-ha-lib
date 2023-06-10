@@ -77,8 +77,8 @@ char* post_req(const char* path, const char* data, bool return_response) {
     }
     memcpy(auth_data, bearer, strlen(bearer));
     memcpy(auth_data + strlen(bearer), long_lived_access_token, strlen(long_lived_access_token)+1);
-
-
+    
+    char* response_buffer = NULL;
     // Attempt to make API request to Home Assistant
     esp_http_client_config_t home_assistant_config = {
         .url = api_URL,
@@ -92,6 +92,10 @@ char* post_req(const char* path, const char* data, bool return_response) {
     ESP_LOGI(TAG, "Attempting POST to %s", api_URL);
 
     esp_http_client_handle_t client = esp_http_client_init(&home_assistant_config);
+    if(!client) {
+        ESP_LOGI(TAG, "Failed to init to http client.");
+        goto failed;
+    }
     esp_http_client_set_header(client, "Authorization", auth_data);
     esp_http_client_set_header(client, "Content-Type", "application/json");
     
@@ -108,7 +112,6 @@ char* post_req(const char* path, const char* data, bool return_response) {
     }
 
     // Get POST response for when return_response=true and the above POST was OK
-    char* response_buffer = NULL;
     if (return_response && post_err == ESP_OK) {
         bool failed_response = true;
         esp_err_t post_response_err = esp_http_client_open(client, 0);
@@ -138,10 +141,12 @@ char* post_req(const char* path, const char* data, bool return_response) {
             ESP_LOGE(TAG, "POST response failed: %s", esp_err_to_name(post_response_err));
         }
     }
-
-    free(auth_data);
+    
     esp_http_client_close(client);
     esp_http_client_cleanup(client);
+
+failed:
+    free(auth_data);
 
     return response_buffer;
 }
@@ -181,6 +186,10 @@ char* get_req(const char* path)
     ESP_LOGI(TAG, "Attempting GET to %s", api_URL);
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
+    if(!client) {
+        ESP_LOGI(TAG, "Failed to init http client.");
+        goto failed;
+    }
     esp_http_client_set_header(client, "Authorization", auth_data);
     esp_http_client_set_header(client, "Content-Type", "application/json");
  
@@ -212,9 +221,11 @@ char* get_req(const char* path)
         response_buffer = NULL;
     }
 
-    free(auth_data);
     esp_http_client_close(client);
     esp_http_client_cleanup(client);
+
+failed:
+    free(auth_data);
     
     return response_buffer;
 }

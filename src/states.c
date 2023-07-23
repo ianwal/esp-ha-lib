@@ -155,6 +155,10 @@ HAEntity* HAEntity_create(void)
 // Frees HAEntity
 void HAEntity_delete(HAEntity* item)
 {
+    if (item == NULL)
+    {
+        return;
+    }
     free(item->state);
     item->state = NULL;
     cJSON_Delete(item->attributes);

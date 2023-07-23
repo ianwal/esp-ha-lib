@@ -129,6 +129,8 @@ Requirements:
 docker run -d --name homeassistant --privileged --restart=unless-stopped -e TZ=America/Los_Angeles -v ./docker/config:/config -p 8123:8123 ghcr.io/home-assistant/home-assistant:stable
 ```
 
+or use the docker-compose in docker/
+
 3. Test using PlatformIO.
 
 If you would like to connect to the Home Assistant frontend:

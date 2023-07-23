@@ -164,9 +164,15 @@ void HAEntity_delete(HAEntity* item)
     {
         return;
     }
-    free(item->state);
-    item->state = NULL;
-    cJSON_Delete(item->attributes);
+    if (item->state != NULL)
+    {
+        free(item->state);
+        item->state = NULL;
+    }
+    if (item->attributes != NULL)
+    {
+        cJSON_Delete(item->attributes);
+    }
     free(item);
     item = NULL;
 }

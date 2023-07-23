@@ -1,6 +1,11 @@
 #pragma once
 #include <stdbool.h>
 
+#define EVENTSPATH "/api/events"
+#define STATESPATH "/api/states"
+#define CONFIGPATH "/api/config"
+#define CHECKCONFIGPATH "/api/config/core/check_config"
+
 extern char* ha_url;
 extern char* long_lived_access_token;
 

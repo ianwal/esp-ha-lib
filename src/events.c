@@ -4,16 +4,15 @@
 #include "esp_log.h"
 #include "cJSON.h"
 #include "api.h"
+#include <stdbool.h>
 #include "events.h"
 
 static const char* TAG = "Events";
 
-#define eventspath "/api/events"
-
-static char* get_events_req(void)
+static char *get_events_req(void)
 {
-    char* req = get_req(eventspath);
-    
+    char *req = get_req(EVENTSPATH);
+
     if (!req) {
         ESP_LOGE(TAG, "API events GET request failed");
         return NULL;
@@ -73,9 +72,9 @@ void post_event(char* event_type, cJSON* event_data)
     char* jsonstr = cJSON_Print(json_api_req);
     //ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
 
-    char path[sizeof(eventspath)+strlen(event_type)+1+1];  // +1 for the / in the path
-    snprintf(path, sizeof(eventspath)+strlen(event_type)+1+1, "%s/%s", eventspath, event_type);
-    
+    char path[sizeof(EVENTSPATH) + strlen(event_type) + 1 + 1]; // +1 for the / in the path
+    snprintf(path, sizeof(EVENTSPATH) + strlen(event_type) + 1 + 1, "%s/%s", EVENTSPATH, event_type);
+
     //ESP_LOGI(TAG, "Path - %s", path);
     
     post_req(path, jsonstr, false);

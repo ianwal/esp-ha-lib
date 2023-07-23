@@ -9,26 +9,25 @@
 
 static const char *TAG = "States";
 
-#define statespath "/api/states"
-
-// Create API request to home assistant with entity data  
-void post_entity(HAEntity* entity){
+// Create API request to home assistant with entity data
+void post_entity(HAEntity *entity)
+{
     if (!entity || !entity->entity_id || !entity->state)
     {
         ESP_LOGE(TAG, "Failed to post entity. Entity or struct members are null.");
         return;
     }
-    cJSON* json_api_req = cJSON_CreateObject();
+    cJSON *json_api_req = cJSON_CreateObject();
 
     cJSON_AddItemToObject(json_api_req, "state", cJSON_CreateString(entity->state));
     cJSON_AddItemToObject(json_api_req, "attributes", cJSON_Duplicate(entity->attributes, true));
 
-    char* jsonstr = cJSON_Print(json_api_req);
-    //ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
+    char *jsonstr = cJSON_Print(json_api_req);
+    // ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
 
-    char path[sizeof(statespath)+strlen(entity->entity_id)+1+1]; // +1 for the / in the path
-    snprintf(path, sizeof(statespath)+strlen(entity->entity_id)+1+1, "%s/%s", statespath, entity->entity_id);
-    
+    char path[sizeof(STATESPATH) + strlen(entity->entity_id) + 1 + 1]; // +1 for the / in the path
+    snprintf(path, sizeof(STATESPATH) + strlen(entity->entity_id) + 1 + 1, "%s/%s", STATESPATH, entity->entity_id);
+
     //ESP_LOGI(TAG, "Path - %s", path);
     
     post_req(path, jsonstr, false);
@@ -54,8 +53,8 @@ void add_entity_attribute(char* key, char* value, HAEntity* entity)
 }
 
 static char* get_entity_req(char* entity_name){
-    char path[256+sizeof(statespath)+1]; // +1 for the / in the path
-    snprintf(path, 256+sizeof(statespath)+1, "%s/%s", statespath, entity_name);
+    char path[256 + sizeof(STATESPATH) + 1]; // +1 for the / in the path
+    snprintf(path, 256 + sizeof(STATESPATH) + 1, "%s/%s", STATESPATH, entity_name);
     char* req = get_req(path);
     
     if (!req) {
@@ -218,8 +217,8 @@ void HAEntity_print(HAEntity* item)
 
 static char* get_states_req(void)
 {
-    char* req = get_req(statespath);
-    
+    char *req = get_req(STATESPATH);
+
     if (!req) {
         ESP_LOGE(TAG, "API states GET request failed");
         return NULL;

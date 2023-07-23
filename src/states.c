@@ -13,6 +13,11 @@ static const char *TAG = "States";
 
 // Create API request to home assistant with entity data  
 void post_entity(HAEntity* entity){
+    if (!entity || !entity->entity_id || !entity->state)
+    {
+        ESP_LOGE(TAG, "Failed to post entity. Entity or struct members are null.");
+        return;
+    }
     cJSON* json_api_req = cJSON_CreateObject();
 
     cJSON_AddItemToObject(json_api_req, "state", cJSON_CreateString(entity->state));

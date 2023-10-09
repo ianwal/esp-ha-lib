@@ -7,43 +7,41 @@ extern "C" {
 #include <string.h>
 }
 #include "api.hpp"
+#include <string>
 
 static constexpr const char *TAG = "Config";
 
-static char *get_config_req(void)
+static std::string get_config_req(void)
 {
-        char *req = get_req(CONFIGPATH);
+        std::string req = get_req(CONFIGPATH);
 
+        /* TODO: Fix
         if (!req) {
                 ESP_LOGE(TAG, "API GET request failed");
                 return NULL;
         }
-
+        */
         return req;
 }
 
-static cJSON *parse_config_str(char *configstr)
+static cJSON *parse_config_str(const std::string &configstr)
 {
-        if (!configstr)
-                return NULL;
-
-        cJSON *jsonreq = cJSON_Parse(configstr);
+        cJSON *jsonreq = cJSON_Parse(configstr.c_str());
         return jsonreq;
 }
 
 cJSON *get_config(void)
 {
-        char *configstr = get_config_req();
+        const std::string configstr = get_config_req();
         cJSON *config = parse_config_str(configstr);
-        free(configstr);
         return config;
 }
 
 // Returns true if the config is good
 bool check_config(void)
 {
-        char *ok_response = const_cast<char *>("{\"result\":\"valid\",\"errors\":null}");
-        char *response = post_req(CHECKCONFIGPATH, NULL, true);
+        constexpr const char *ok_response = "{\"result\":\"valid\",\"errors\":null}";
+        char *response = post_req(CHECKCONFIGPATH, nullptr, true);
 
         bool result;
         if (response && strcmp(ok_response, response) == 0) {

@@ -29,7 +29,7 @@ class HAEntity
 
 [[deprecated("Use HAEntity::add_attribute() instead.")]] void add_entity_attribute(const char *key, const char *value,
                                                                                    HAEntity *entity);
-HAEntity *get_entity(const char *entity_name);
+HAEntity *get_entity(const std::string &entity_name);
 
 [[deprecated("Use HAEntity::post() instead.")]] void post_entity(HAEntity *entity);
 

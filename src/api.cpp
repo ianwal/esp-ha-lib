@@ -5,6 +5,7 @@ extern "C" {
 #include <stdlib.h>
 }
 #include "api.hpp"
+#include <string>
 static constexpr const char *TAG = "API";
 
 // Set with set_ha_url()
@@ -152,7 +153,7 @@ char *post_req(const char *path, const char *data, bool return_response)
         return response_buffer;
 }
 
-char *get_req(const char *path)
+std::string get_req(const char *path)
 {
         if (!ha_url || !long_lived_access_token) {
                 ESP_LOGE(TAG, "Failed to GET: ha_url or access token not set yet");
@@ -225,20 +226,25 @@ char *get_req(const char *path)
         if (failed) {
                 free(local_response_buffer);
                 local_response_buffer = nullptr;
+                return std::string("");
         }
 
-        return local_response_buffer;
+        std::string retstr = std::string(local_response_buffer);
+        free(local_response_buffer);
+        return retstr;
 }
 
 bool get_api_status(void)
 {
-        char *req = get_req("/api/");
-        if (!req) {
+        const std::string req = get_req("/api/");
+        // TODO: check for error
+        /*
+        if (!creq) {
                 return false;
         }
+        */
 
-        cJSON *jsonreq = cJSON_Parse(req);
-        free(req);
+        cJSON *jsonreq = cJSON_Parse(req.c_str());
 
         if (cJSON_IsNull(jsonreq)) {
                 cJSON_Delete(jsonreq);

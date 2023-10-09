@@ -8,35 +8,33 @@ extern "C" {
 #include <string.h>
 }
 #include "api.hpp"
+#include <string>
 
 static constexpr const char *TAG = "Events";
 
-static char *get_events_req(void)
+static std::string get_events_req(void)
 {
-        char *req = get_req(EVENTSPATH);
+        std::string req = get_req(EVENTSPATH);
 
+        /* TODO: Fix
         if (!req) {
                 ESP_LOGE(TAG, "API events GET request failed");
                 return NULL;
         }
-
+        */
         return req;
 }
 
-static cJSON *parse_events_str(char *eventsstr)
+static cJSON *parse_events_str(const std::string &eventsstr)
 {
-        if (!eventsstr)
-                return NULL;
-
-        cJSON *jsonreq = cJSON_Parse(eventsstr);
+        cJSON *jsonreq = cJSON_Parse(eventsstr.c_str());
         return jsonreq;
 }
 
 cJSON *get_events(void)
 {
-        char *eventsstr = get_events_req();
+        const std::string eventsstr = get_events_req();
         cJSON *events = parse_events_str(eventsstr);
-        free(eventsstr);
         return events;
 }
 

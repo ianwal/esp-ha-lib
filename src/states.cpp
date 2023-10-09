@@ -8,6 +8,7 @@ extern "C" {
 
 #include "api.hpp"
 #include "states.hpp"
+#include <string>
 
 static constexpr const char *TAG = "States";
 
@@ -54,36 +55,33 @@ void add_entity_attribute(const char *key, const char *value, HAEntity *entity)
         cJSON_AddItemToObject(entity->attributes, key, cJSON_CreateString(value));
 }
 
-static char *get_entity_req(const char *entity_name)
+static std::string get_entity_req(const std::string &entity_name)
 {
         char path[256 + std::char_traits<char>::length(STATESPATH) + 1]; // +1 for the / in the path
-        snprintf(path, 256 + std::char_traits<char>::length(STATESPATH) + 1, "%s/%s", STATESPATH, entity_name);
-        char *req = get_req(path);
+        snprintf(path, 256 + std::char_traits<char>::length(STATESPATH) + 1, "%s/%s", STATESPATH, entity_name.c_str());
+        std::string req = get_req(path);
 
+        /* TODO: check error with std::string
         if (!req) {
                 ESP_LOGE(TAG, "API entity GET request failed");
                 return NULL;
         }
-
+        */
         return req;
 }
 
 // Parses the entity str using cJSON
 // Duplicates and assings the values from the parsed cJSON, then frees the cJSON
 // Returned HAEntity must be manually freed with HAEntity_destroy()
-static HAEntity *parse_entity_str(char *entitystr)
+static HAEntity *parse_entity_str(const std::string &entitystr)
 {
-        if (!entitystr)
-                return NULL;
-
         HAEntity *entity = new HAEntity;
         if (!entity) {
                 ESP_LOGE(TAG, "Failed to malloc HAEntity.");
                 return NULL;
         }
 
-        cJSON *jsonreq = cJSON_Parse(entitystr);
-        free(entitystr);
+        cJSON *jsonreq = cJSON_Parse(entitystr.c_str());
 
         cJSON *state = cJSON_GetObjectItem(jsonreq, "state");
         if (cJSON_IsNull(state) || !cJSON_IsString(state)) {
@@ -128,9 +126,9 @@ static HAEntity *parse_entity_str(char *entitystr)
         return entity;
 }
 
-HAEntity *get_entity(const char *entity_name)
+HAEntity *get_entity(const std::string &entity_name)
 {
-        char *entitystr = get_entity_req(entity_name);
+        std::string entitystr = get_entity_req(entity_name);
         HAEntity *entity = parse_entity_str(entitystr);
         if (!entity) {
                 ESP_LOGE(TAG, "Failed to get HAEntity");
@@ -140,24 +138,22 @@ HAEntity *get_entity(const char *entity_name)
         return entity;
 }
 
-static char *get_states_req(void)
+static std::string get_states_req(void)
 {
-        char *req = get_req(STATESPATH);
+        std::string req = get_req(STATESPATH);
 
-        if (!req) {
-                ESP_LOGE(TAG, "API states GET request failed");
-                return NULL;
-        }
-
+        /* TODO: Check for empty string which means it failed
+          if (!req) {
+                  ESP_LOGE(TAG, "API states GET request failed");
+                  return NULL;
+          }
+        */
         return req;
 }
 
-static cJSON *parse_states_str(char *statesstr)
+static cJSON *parse_states_str(std::string statesstr)
 {
-        if (!statesstr)
-                return NULL;
-
-        cJSON *jsonreq = cJSON_Parse(statesstr);
+        cJSON *jsonreq = cJSON_Parse(statesstr.c_str());
         return jsonreq;
 }
 
@@ -165,9 +161,8 @@ static cJSON *parse_states_str(char *statesstr)
 // Note: States might be really big. Mine is around 2400 char on a small install.
 cJSON *get_states(void)
 {
-        char *statesstr = get_states_req();
+        std::string statesstr = get_states_req();
         cJSON *states = parse_states_str(statesstr);
-        free(statesstr);
         return states;
 }
 

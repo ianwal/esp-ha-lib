@@ -30,18 +30,15 @@ static const char *TAG = "TESTING";
 // Attemps to upload and get back a float for a test entity
 void test_entity_uploadreceive(void)
 {
-        // entity name cannot contain special characters other than _ or . it appears
-        const char *entity_id = "sensor.esphalibtest";
-        const char *friendly_entity_name = "esp ha lib test";
-        const char *unit_of_measurement = "Test Units";
+        // entity name cannot contain special characters other than _ or . it seems
+        constexpr const char *entity_id = "sensor.esphalibtest";
+        constexpr const char *friendly_entity_name = "esp ha lib test";
+        constexpr const char *unit_of_measurement = "Test Units";
         const float state = (esp_random() % 100);
 
         HAEntity entity;
-        // entity->state = (char *)malloc(8);
-        // entity->state = new char[8];
-        // snprintf(entity->state, 8, "%.2f", state);
         entity.state = std::to_string(state);
-        strcpy(entity.entity_id, entity_id);
+        entity.entity_id = entity_id;
         entity.add_attribute("friendly_name", friendly_entity_name);
         entity.add_attribute("unit_of_measurement", unit_of_measurement);
 
@@ -49,14 +46,12 @@ void test_entity_uploadreceive(void)
 
         HAEntity *newEntity = get_entity(entity_id);
         TEST_ASSERT_NOT_NULL(newEntity);
-        // float fstate = strtof(newEntity->state, NULL);
-        float fstate = std::stof(newEntity->state);
+        const float fstate = std::stof(newEntity->state);
 
         ESP_LOGI(TAG, "Uploaded: %f, Received %f", state, fstate);
 
         // HA only stores floats to 2 decimal places it seems
         constexpr const float epsilon = 1e-2;
-
         TEST_ASSERT_FLOAT_WITHIN(epsilon, state, fstate);
         delete newEntity;
 }
@@ -70,14 +65,14 @@ void test_api_running(void)
 
 void test_HAEntity_print(void)
 {
-        /*
-            HAEntity entity = {
-                .entity_id = "print_test1",
-                .state = "on!",
-                .attributes = cJSON_Parse("{\"unit_of_measurement\":\"Test Units\",\"friendly_name\":\"esp ha lib
-           test\"}"), .last_changed = const_cast<char *>("2023-05-17T10:41:28.855123+00:00"), .last_updated =
-           const_cast<char *>("2021-02-12T10:41:28.422190+00:00")}; entity.print();
-            */
+
+        HAEntity entity = {
+            .entity_id = "print_test1",
+            .state = "on!",
+            .attributes = cJSON_Parse("{\"unit_of_measurement\":\"Test Units\",\"friendly_name\":\"esp ha libtest\"}"),
+            .last_changed = const_cast<char *>("2023-05-17T10:41:28.855123+00:00"),
+            .last_updated = const_cast<char *>("2021-02-12T10:41:28.422190+00:00")};
+        entity.print();
 }
 
 // Tests printing a real HAEntity from Home Assistant

@@ -26,10 +26,10 @@ void post_entity(HAEntity &entity)
         char *jsonstr = cJSON_Print(json_api_req);
         // ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
 
-        char path[std::char_traits<char>::length(STATESPATH) + strlen(entity.entity_id) + 1 +
+        char path[std::char_traits<char>::length(STATESPATH) + entity.entity_id.size() + 1 +
                   1]; // +1 for the / in the path
-        snprintf(path, std::char_traits<char>::length(STATESPATH) + strlen(entity.entity_id) + 1 + 1, "%s/%s",
-                 STATESPATH, entity.entity_id);
+        snprintf(path, std::char_traits<char>::length(STATESPATH) + entity.entity_id.size() + 1 + 1, "%s/%s",
+                 STATESPATH, entity.entity_id.c_str());
 
         // ESP_LOGI(TAG, "Path - %s", path);
 
@@ -69,7 +69,7 @@ static char *get_entity_req(const char *entity_name)
 }
 
 // Parses the entity str using cJSON
-// Duplicates and assings the values from the parsed cJSOn, then frees the cJSON
+// Duplicates and assings the values from the parsed cJSON, then frees the cJSON
 // Returned HAEntity must be manually freed with HAEntity_destroy()
 static HAEntity *parse_entity_str(char *entitystr)
 {
@@ -89,35 +89,31 @@ static HAEntity *parse_entity_str(char *entitystr)
         if (cJSON_IsNull(state) || !cJSON_IsString(state)) {
                 ESP_LOGI(TAG, "Entity has no state or is not a string.");
         } else {
-                entity->state = std::string(cJSON_GetStringValue(state));
+                entity->state = cJSON_GetStringValue(state);
         }
 
         cJSON *entity_id = cJSON_GetObjectItem(jsonreq, "entity_id");
         if (cJSON_IsNull(entity_id) || !cJSON_IsString(entity_id)) {
                 ESP_LOGI(TAG, "Entity has no entity_id or it is not a string.");
-                strcpy(entity->entity_id, "");
+                entity->entity_id = "";
         } else {
-                // Safe string copy
-                strncpy(entity->entity_id, cJSON_GetStringValue(entity_id), sizeof(entity->entity_id));
-                entity->entity_id[sizeof(entity->entity_id) - 1] = '\0';
+                entity->entity_id = cJSON_GetStringValue(entity_id);
         }
 
         cJSON *last_changed = cJSON_GetObjectItem(jsonreq, "last_changed");
         if (cJSON_IsNull(last_changed) || !cJSON_IsString(last_changed)) {
                 ESP_LOGI(TAG, "Entity has no last_changed or it is not a string.");
-                strcpy(entity->last_changed, "");
+                entity->last_changed = "";
         } else {
-                strncpy(entity->last_changed, cJSON_GetStringValue(last_changed), sizeof(entity->last_changed));
-                entity->last_changed[sizeof(entity->last_changed) - 1] = '\0';
+                entity->last_changed = cJSON_GetStringValue(last_changed);
         }
 
         cJSON *last_updated = cJSON_GetObjectItem(jsonreq, "last_updated");
         if (cJSON_IsNull(last_updated) || !cJSON_IsString(last_updated)) {
                 ESP_LOGI(TAG, "Entity has no last_updated or it is not a string.");
-                strcpy(entity->last_updated, "");
+                entity->last_updated = "";
         } else {
-                strncpy(entity->last_updated, cJSON_GetStringValue(last_updated), sizeof(entity->last_updated));
-                entity->last_updated[sizeof(entity->last_updated) - 1] = '\0';
+                entity->last_updated = cJSON_GetStringValue(last_updated);
         }
 
         cJSON *attributes = cJSON_GetObjectItem(jsonreq, "attributes");
@@ -173,4 +169,81 @@ cJSON *get_states(void)
         cJSON *states = parse_states_str(statesstr);
         free(statesstr);
         return states;
+}
+
+// Create API request to HA with entity data
+void HAEntity::post()
+{
+        if (!entity_id[0]) {
+                ESP_LOGE(TAG, "Failed to post entity. Entity or entity members are null.");
+                return;
+        }
+        cJSON *json_api_req = cJSON_CreateObject();
+
+        cJSON_AddItemToObject(json_api_req, "state", cJSON_CreateString(state.c_str()));
+        cJSON_AddItemToObject(json_api_req, "attributes", cJSON_Duplicate(attributes, true));
+
+        char *jsonstr = cJSON_Print(json_api_req);
+        // ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
+
+        char path[std::char_traits<char>::length(STATESPATH) + entity_id.size() + 1 + 1]; // +1 for the / in the path
+        snprintf(path, std::char_traits<char>::length(STATESPATH) + entity_id.size() + 1 + 1, "%s/%s", STATESPATH,
+                 entity_id.c_str());
+
+        // ESP_LOGI(TAG, "Path - %s", path);
+
+        post_req(path, jsonstr, false);
+        free(jsonstr);
+        cJSON_Delete(json_api_req);
+}
+
+// ex. unit_of_measurement, friendly_name
+void HAEntity::add_attribute(const char *key, const char *value)
+{
+        if (!attributes) {
+                attributes = cJSON_CreateObject();
+        }
+
+        ESP_LOGV(TAG, "Adding %s:%s to attributes", key, value);
+        cJSON_AddItemToObject(attributes, key, cJSON_CreateString(value));
+}
+
+void HAEntity::print()
+{
+
+        ESP_LOGV(TAG, "Printing HAEntity:");
+        ESP_LOGI(TAG, "entity_id: %s", entity_id.c_str());
+
+        if (state.size() > 0) {
+                ESP_LOGI(TAG, "state: %s", state.c_str());
+        } else {
+                ESP_LOGI(TAG, "no state");
+        }
+
+        if (cJSON_IsNull(attributes) || !cJSON_IsObject(attributes)) {
+                ESP_LOGI(TAG, "no attributes");
+        } else {
+                char *jsonstr = cJSON_Print(attributes);
+                ESP_LOGI(TAG, "Attributes - %s", jsonstr);
+                free(jsonstr);
+        }
+
+        if (last_changed[0] != '\0') {
+                ESP_LOGI(TAG, "last_changed: %s", last_changed.c_str());
+        } else {
+                ESP_LOGI(TAG, "no last_changed");
+        }
+
+        if (last_updated[0] != '\0') {
+                ESP_LOGI(TAG, "last_updated: %s", last_updated.c_str());
+        } else {
+                ESP_LOGI(TAG, "no last_updated");
+        }
+}
+
+HAEntity::~HAEntity()
+{
+        if (attributes != nullptr) {
+                cJSON_Delete(attributes);
+        }
 }

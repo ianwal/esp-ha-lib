@@ -1,3 +1,5 @@
+
+extern "C" {
 #include "cJSON.h"
 #include "esp_event.h"
 #include "esp_http_client.h"
@@ -14,12 +16,13 @@
 
 #include "driver/gpio.h"
 
-#include "esp_ha_lib.h"
 #include "secrets.h"
 #include "wifi.h"
 
 #include <stdlib.h>
 #include <unity.h>
+}
+#include "esp_ha_lib.hpp"
 
 static const char *TAG = "TESTING";
 
@@ -27,17 +30,17 @@ static const char *TAG = "TESTING";
 void test_entity_uploadreceive(void)
 {
         // entity name cannot contain special characters other than _ or . it appears
-        char *entity_id = "sensor.esphalibtest";
-        char *friendly_entity_name = "esp ha lib test";
-        char *unit_of_measurement = "Test Units";
+        const char *entity_id = "sensor.esphalibtest";
+        const char *friendly_entity_name = "esp ha lib test";
+        const char *unit_of_measurement = "Test Units";
         float state = (esp_random() % 100);
 
         HAEntity *entity = HAEntity_create();
-        entity->state = malloc(8);
+        entity->state = (char *)malloc(8);
         snprintf(entity->state, 8, "%.2f", state);
         strcpy(entity->entity_id, entity_id);
-        add_entity_attribute("friendly_name", friendly_entity_name, entity);
-        add_entity_attribute("unit_of_measurement", unit_of_measurement, entity);
+        add_entity_attribute(const_cast<char *>("friendly_name"), friendly_entity_name, entity);
+        add_entity_attribute(const_cast<char *>("unit_of_measurement"), unit_of_measurement, entity);
 
         post_entity(entity);
 
@@ -64,16 +67,16 @@ void test_api_running(void)
 
 void test_HAEntity_print(void)
 {
-        HAEntity entity = {.entity_id = "print_test1",
-                           .last_updated = "2021-02-12T10:41:28.422190+00:00",
-                           .last_changed = "2023-05-17T10:41:28.855123+00:00"};
-        entity.attributes =
-            cJSON_Parse("{\"unit_of_measurement\":\"Test Units\",\"friendly_name\":\"esp ha lib test\"}");
-        entity.state = strdup("on!");
+        HAEntity entity = {
+            .entity_id = "print_test1",
+            .state = const_cast<char *>("on!"),
+            .attributes = cJSON_Parse("{\"unit_of_measurement\":\"Test Units\",\"friendly_name\":\"esp ha lib test\"}"),
+            .last_changed = "2023-05-17T10:41:28.855123+00:00",
+            .last_updated = "2021-02-12T10:41:28.422190+00:00",
+        };
         HAEntity_print(&entity);
 
         cJSON_Delete(entity.attributes);
-        free(entity.state);
 }
 
 // Tests printing a real HAEntity from Home Assistant
@@ -92,9 +95,9 @@ void test_print_real_HAEntity(void)
 void test_add_entity_attribute(void)
 {
         HAEntity *entity = HAEntity_create();
-        char *entity_name = "sensor.randomsensortest";
-        char *friendly_entity_name = "esp ha lib sensor test";
-        char *unit_of_measurement = "test units";
+        constexpr const char *entity_name = "sensor.randomsensortest";
+        constexpr const char *friendly_entity_name = "esp ha lib sensor test";
+        constexpr const char *unit_of_measurement = "test units";
         add_entity_attribute("entity_name", entity_name, entity);
         add_entity_attribute("friendly_entity_name", friendly_entity_name, entity);
         add_entity_attribute("unit_of_measurement", unit_of_measurement, entity);
@@ -120,7 +123,8 @@ void test_get_events()
 
         ESP_LOGV(TAG, "Events - %s", jsonstr);
 
-        HAEvent event = get_event_from_events("homeassistant_start", events);
+        constexpr const char *ha_start_event_name = "homeassistant_start";
+        HAEvent event = get_event_from_events(ha_start_event_name, events);
         ESP_LOGV(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
 
         free(jsonstr);
@@ -203,9 +207,11 @@ int runUnityTests(void)
         return UNITY_END();
 }
 
+extern "C" {
 void app_main(void)
 {
         wifi_init_sta();
 
         runUnityTests();
+}
 }

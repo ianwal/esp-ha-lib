@@ -1,4 +1,6 @@
-#include "events.h"
+#include "events.hpp"
+
+extern "C" {
 #include "api.h"
 #include "cJSON.h"
 #include "esp_log.h"
@@ -6,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+}
 
 static const char *TAG = "Events";
 
@@ -39,7 +42,7 @@ cJSON *get_events(void)
 }
 
 // Get single event by name from a cJSON array of events
-HAEvent get_event_from_events(char *event_type, cJSON *events)
+HAEvent get_event_from_events(const char *event_type, cJSON *events)
 {
         // TODO: Add safety checks for cJSON object (isarray, etc.)
         // Should the event.event be set to something like "Not Found" as the default case?
@@ -61,7 +64,7 @@ HAEvent get_event_from_events(char *event_type, cJSON *events)
 
 // Create API request to home assistant with events data
 // Fires an event with event_type. You can pass an optional JSON object to be used as event_data
-void post_event(char *event_type, cJSON *event_data)
+void post_event(const char *event_type, cJSON *event_data)
 {
         cJSON *json_api_req;
         if (event_data) {

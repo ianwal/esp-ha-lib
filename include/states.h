@@ -11,8 +11,8 @@ typedef struct {
 } HAEntity;
 
 void HAEntity_delete(HAEntity *item);
-void add_entity_attribute(char *key, char *value, HAEntity *entity);
-HAEntity *get_entity(char *entity_name);
+void add_entity_attribute(const char *key, const char *value, HAEntity *entity);
+HAEntity *get_entity(const char *entity_name);
 
 void post_entity(HAEntity *entity);
 

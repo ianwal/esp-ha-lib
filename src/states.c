@@ -35,7 +35,7 @@ void post_entity(HAEntity *entity)
 }
 
 // ex. unit_of_measurement, friendly_name
-void add_entity_attribute(char *key, char *value, HAEntity *entity)
+void add_entity_attribute(const char *key, const char *value, HAEntity *entity)
 {
         if (!entity) {
                 ESP_LOGE(TAG, "Failed to add entity to attribute. Entity is null.");
@@ -128,7 +128,7 @@ static HAEntity *parse_entity_str(char *entitystr)
         return entity;
 }
 
-HAEntity *get_entity(char *entity_name)
+HAEntity *get_entity(const char *entity_name)
 {
         char *entitystr = get_entity_req(entity_name);
         HAEntity *entity = parse_entity_str(entitystr);

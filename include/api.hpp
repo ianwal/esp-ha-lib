@@ -1,5 +1,4 @@
 #pragma once
-#include <stdbool.h>
 
 constexpr const char *EVENTSPATH = "/api/events";
 constexpr const char *STATESPATH = "/api/states";

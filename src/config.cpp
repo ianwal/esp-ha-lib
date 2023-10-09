@@ -2,7 +2,6 @@
 extern "C" {
 #include "cJSON.h"
 #include "esp_log.h"
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

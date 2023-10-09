@@ -1,11 +1,14 @@
-#include "states.h"
-#include "api.h"
+extern "C" {
 #include "cJSON.h"
 #include "esp_log.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+}
+#include "api.hpp"
+
+#include "states.hpp"
 
 static const char *TAG = "States";
 
@@ -50,7 +53,7 @@ void add_entity_attribute(const char *key, const char *value, HAEntity *entity)
         cJSON_AddItemToObject(entity->attributes, key, cJSON_CreateString(value));
 }
 
-static char *get_entity_req(char *entity_name)
+static char *get_entity_req(const char *entity_name)
 {
         char path[256 + sizeof(STATESPATH) + 1]; // +1 for the / in the path
         snprintf(path, 256 + sizeof(STATESPATH) + 1, "%s/%s", STATESPATH, entity_name);
@@ -143,7 +146,7 @@ HAEntity *get_entity(const char *entity_name)
 // Create a new HAEntity
 HAEntity *HAEntity_create(void)
 {
-        HAEntity *newEntity = malloc(sizeof(HAEntity));
+        HAEntity *newEntity = (HAEntity *)malloc(sizeof(HAEntity));
         if (!newEntity) {
                 return NULL;
         }

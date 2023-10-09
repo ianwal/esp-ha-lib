@@ -1,7 +1,6 @@
 #include "events.hpp"
 
 extern "C" {
-#include "api.h"
 #include "cJSON.h"
 #include "esp_log.h"
 #include <stdbool.h>
@@ -9,6 +8,7 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 }
+#include "api.hpp"
 
 static const char *TAG = "Events";
 

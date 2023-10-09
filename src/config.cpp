@@ -1,13 +1,13 @@
-#include "api.h"
+
+extern "C" {
 #include "cJSON.h"
 #include "esp_log.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define CONFIGPATH "/api/config"
-#define CHECKCONFIGPATH "/api/config/core/check_config"
+}
+#include "api.hpp"
 
 static const char *TAG = "Config";
 
@@ -43,7 +43,7 @@ cJSON *get_config(void)
 // Returns true if the config is good
 bool check_config(void)
 {
-        char *ok_response = "{\"result\":\"valid\",\"errors\":null}";
+        char *ok_response = const_cast<char *>("{\"result\":\"valid\",\"errors\":null}");
         char *response = post_req(CHECKCONFIGPATH, NULL, true);
 
         bool result;

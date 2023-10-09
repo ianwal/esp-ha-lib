@@ -5,31 +5,31 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 }
-#include "api.hpp"
 
+#include "api.hpp"
 #include "states.hpp"
 
 static constexpr const char *TAG = "States";
 
 // Create API request to home assistant with entity data
-void post_entity(HAEntity *entity)
+void post_entity(HAEntity &entity)
 {
-        if (!entity || !entity->entity_id) {
-                ESP_LOGE(TAG, "Failed to post entity. Entity or entity members are null.");
+        if (!entity.entity_id[0]) {
+                ESP_LOGE(TAG, "Failed to post entity. Entity members are invalid/null.");
                 return;
         }
         cJSON *json_api_req = cJSON_CreateObject();
 
-        cJSON_AddItemToObject(json_api_req, "state", cJSON_CreateString(entity->state.c_str()));
-        cJSON_AddItemToObject(json_api_req, "attributes", cJSON_Duplicate(entity->attributes, true));
+        cJSON_AddItemToObject(json_api_req, "state", cJSON_CreateString(entity.state.c_str()));
+        cJSON_AddItemToObject(json_api_req, "attributes", cJSON_Duplicate(entity.attributes, true));
 
         char *jsonstr = cJSON_Print(json_api_req);
         // ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
 
-        char path[std::char_traits<char>::length(STATESPATH) + strlen(entity->entity_id) + 1 +
+        char path[std::char_traits<char>::length(STATESPATH) + strlen(entity.entity_id) + 1 +
                   1]; // +1 for the / in the path
-        snprintf(path, std::char_traits<char>::length(STATESPATH) + strlen(entity->entity_id) + 1 + 1, "%s/%s",
-                 STATESPATH, entity->entity_id);
+        snprintf(path, std::char_traits<char>::length(STATESPATH) + strlen(entity.entity_id) + 1 + 1, "%s/%s",
+                 STATESPATH, entity.entity_id);
 
         // ESP_LOGI(TAG, "Path - %s", path);
 
@@ -76,7 +76,7 @@ static HAEntity *parse_entity_str(char *entitystr)
         if (!entitystr)
                 return NULL;
 
-        HAEntity *entity = HAEntity_create();
+        HAEntity *entity = new HAEntity;
         if (!entity) {
                 ESP_LOGE(TAG, "Failed to malloc HAEntity.");
                 return NULL;
@@ -142,70 +142,6 @@ HAEntity *get_entity(const char *entity_name)
         }
 
         return entity;
-}
-
-// Create a new HAEntity
-HAEntity *HAEntity_create(void)
-{
-        HAEntity *newEntity = new HAEntity;
-        strcpy(newEntity->last_changed, "");
-        strcpy(newEntity->last_updated, "");
-        return newEntity;
-}
-
-// Frees HAEntity
-void HAEntity_delete(HAEntity *entity)
-{
-        /*
-            if (item == NULL) {
-                    return;
-            }
-            if (item->attributes != NULL) {
-                    cJSON_Delete(item->attributes);
-            }
-            free(item);
-            item = NULL;
-            */
-        delete entity;
-}
-
-// Print HAEntity
-void HAEntity_print(HAEntity *item)
-{
-        ESP_LOGV(TAG, "Printing HAEntity");
-
-        if (!item) {
-                ESP_LOGI(TAG, "Cannot print HAEntity: Entity is NULL.");
-                return;
-        }
-
-        ESP_LOGI(TAG, "entity_id: %s", item->entity_id);
-
-        if (item->state.size() > 0) {
-                ESP_LOGI(TAG, "state: %s", item->state.c_str());
-        } else {
-                ESP_LOGI(TAG, "no state");
-        }
-
-        if (cJSON_IsNull(item->attributes) || !cJSON_IsObject(item->attributes)) {
-                ESP_LOGI(TAG, "no attributes");
-        } else {
-                char *jsonstr = cJSON_Print(item->attributes);
-                ESP_LOGI(TAG, "Attributes - %s", jsonstr);
-                free(jsonstr);
-        }
-
-        if (item->last_changed[0]) {
-                ESP_LOGI(TAG, "last_changed: %s", item->last_changed);
-        } else {
-                ESP_LOGI(TAG, "no last_changed");
-        }
-
-        if (item->last_updated[0]) {
-                ESP_LOGI(TAG, "last_updated: %s", item->last_updated);
-        } else {
-                ESP_LOGI(TAG, "no last_updated");
-        }
 }
 
 static char *get_states_req(void)

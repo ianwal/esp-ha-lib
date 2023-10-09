@@ -36,16 +36,16 @@ void test_entity_uploadreceive(void)
         const char *unit_of_measurement = "Test Units";
         const float state = (esp_random() % 100);
 
-        HAEntity *entity = HAEntity_create();
+        HAEntity entity;
         // entity->state = (char *)malloc(8);
         // entity->state = new char[8];
         // snprintf(entity->state, 8, "%.2f", state);
-        entity->state = std::to_string(state);
-        strcpy(entity->entity_id, entity_id);
-        add_entity_attribute(const_cast<char *>("friendly_name"), friendly_entity_name, entity);
-        add_entity_attribute(const_cast<char *>("unit_of_measurement"), unit_of_measurement, entity);
+        entity.state = std::to_string(state);
+        strcpy(entity.entity_id, entity_id);
+        entity.add_attribute("friendly_name", friendly_entity_name);
+        entity.add_attribute("unit_of_measurement", unit_of_measurement);
 
-        post_entity(entity);
+        entity.post();
 
         HAEntity *newEntity = get_entity(entity_id);
         TEST_ASSERT_NOT_NULL(newEntity);
@@ -55,11 +55,10 @@ void test_entity_uploadreceive(void)
         ESP_LOGI(TAG, "Uploaded: %f, Received %f", state, fstate);
 
         // HA only stores floats to 2 decimal places it seems
-        float epsilon = 1e-2;
+        constexpr const float epsilon = 1e-2;
 
-        delete entity;
-        delete newEntity;
         TEST_ASSERT_FLOAT_WITHIN(epsilon, state, fstate);
+        delete newEntity;
 }
 
 void test_api_running(void)
@@ -72,50 +71,42 @@ void test_api_running(void)
 void test_HAEntity_print(void)
 {
         /*
-            HAEntity entity;
-            entity.entity_id = "print_test1";
-            entity.state = "on!";
-            entity.attributes =
-                cJSON_Parse("{\"unit_of_measurement\":\"Test Units\",\"friendly_name\":\"esp ha lib test\"}");
-            entity.last_changed = "2023-05-17T10:41:28.855123+00:00";
-            entity.last_updated = "2021-02-12T10:41:28.422190+00:00";
-            HAEntity_print(&entity);
-
-            cJSON_Delete(entity.attributes);
-    */
+            HAEntity entity = {
+                .entity_id = "print_test1",
+                .state = "on!",
+                .attributes = cJSON_Parse("{\"unit_of_measurement\":\"Test Units\",\"friendly_name\":\"esp ha lib
+           test\"}"), .last_changed = const_cast<char *>("2023-05-17T10:41:28.855123+00:00"), .last_updated =
+           const_cast<char *>("2021-02-12T10:41:28.422190+00:00")}; entity.print();
+            */
 }
 
 // Tests printing a real HAEntity from Home Assistant
 // Needs entity "sun.sun" which I think is built in or a substitute on a live home assistant to connect to
 void test_print_real_HAEntity(void)
 {
-        HAEntity *entity = HAEntity_create();
-        entity = get_entity("sun.sun");
-
+        HAEntity *entity = get_entity("sun.sun");
         TEST_ASSERT_NOT_NULL(entity);
-        HAEntity_print(entity);
-        HAEntity_delete(entity);
+        entity->print();
+        delete entity;
 }
 
 // Tests adding a new entity attribute to an HAEntity
 void test_add_entity_attribute(void)
 {
-        HAEntity *entity = HAEntity_create();
+        HAEntity entity;
         constexpr const char *entity_name = "sensor.randomsensortest";
         constexpr const char *friendly_entity_name = "esp ha lib sensor test";
         constexpr const char *unit_of_measurement = "test units";
-        add_entity_attribute("entity_name", entity_name, entity);
-        add_entity_attribute("friendly_entity_name", friendly_entity_name, entity);
-        add_entity_attribute("unit_of_measurement", unit_of_measurement, entity);
+        entity.add_attribute("entity_name", entity_name);
+        entity.add_attribute("friendly_entity_name", friendly_entity_name);
+        entity.add_attribute("unit_of_measurement", unit_of_measurement);
 
         TEST_ASSERT_EQUAL_STRING(entity_name,
-                                 cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "entity_name")));
+                                 cJSON_GetStringValue(cJSON_GetObjectItem(entity.attributes, "entity_name")));
         TEST_ASSERT_EQUAL_STRING(friendly_entity_name,
-                                 cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "friendly_entity_name")));
+                                 cJSON_GetStringValue(cJSON_GetObjectItem(entity.attributes, "friendly_entity_name")));
         TEST_ASSERT_EQUAL_STRING(unit_of_measurement,
-                                 cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "unit_of_measurement")));
-
-        HAEntity_delete(entity);
+                                 cJSON_GetStringValue(cJSON_GetObjectItem(entity.attributes, "unit_of_measurement")));
 }
 
 void test_get_events()

@@ -9,7 +9,7 @@ extern "C" {
 }
 #include "api.hpp"
 
-static const char *TAG = "Config";
+static constexpr const char *TAG = "Config";
 
 static char *get_config_req(void)
 {

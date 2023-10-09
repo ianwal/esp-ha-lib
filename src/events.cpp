@@ -10,7 +10,7 @@ extern "C" {
 }
 #include "api.hpp"
 
-static const char *TAG = "Events";
+static constexpr const char *TAG = "Events";
 
 static char *get_events_req(void)
 {

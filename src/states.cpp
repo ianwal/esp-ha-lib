@@ -10,7 +10,7 @@ extern "C" {
 
 #include "states.hpp"
 
-static const char *TAG = "States";
+static constexpr const char *TAG = "States";
 
 // Create API request to home assistant with entity data
 void post_entity(HAEntity *entity)
@@ -25,12 +25,14 @@ void post_entity(HAEntity *entity)
         cJSON_AddItemToObject(json_api_req, "attributes", cJSON_Duplicate(entity->attributes, true));
 
         char *jsonstr = cJSON_Print(json_api_req);
-        ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
+        // ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
 
-        char path[sizeof(STATESPATH) + strlen(entity->entity_id) + 1 + 1]; // +1 for the / in the path
-        snprintf(path, sizeof(STATESPATH) + strlen(entity->entity_id) + 1 + 1, "%s/%s", STATESPATH, entity->entity_id);
+        char path[std::char_traits<char>::length(STATESPATH) + strlen(entity->entity_id) + 1 +
+                  1]; // +1 for the / in the path
+        snprintf(path, std::char_traits<char>::length(STATESPATH) + strlen(entity->entity_id) + 1 + 1, "%s/%s",
+                 STATESPATH, entity->entity_id);
 
-        ESP_LOGI(TAG, "Path - %s", path);
+        // ESP_LOGI(TAG, "Path - %s", path);
 
         post_req(path, jsonstr, false);
         free(jsonstr);
@@ -55,8 +57,8 @@ void add_entity_attribute(const char *key, const char *value, HAEntity *entity)
 
 static char *get_entity_req(const char *entity_name)
 {
-        char path[256 + sizeof(STATESPATH) + 1]; // +1 for the / in the path
-        snprintf(path, 256 + sizeof(STATESPATH) + 1, "%s/%s", STATESPATH, entity_name);
+        char path[256 + std::char_traits<char>::length(STATESPATH) + 1]; // +1 for the / in the path
+        snprintf(path, 256 + std::char_traits<char>::length(STATESPATH) + 1, "%s/%s", STATESPATH, entity_name);
         char *req = get_req(path);
 
         if (!req) {

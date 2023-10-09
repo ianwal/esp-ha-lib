@@ -3,15 +3,6 @@
 #include "cJSON.h"
 
 #include <string>
-/*
-typedef struct {
-        char entity_id[256]; // definite 256 max from what I searched
-        char *state;
-        cJSON *attributes;     // attributes is another json object
-        char last_changed[48]; // ISO 8601 formatted datettime ex. 2016-05-30T21:43:29.204838+00:00 = 32 char
-        char last_updated[48]; // ISO 8601 as well
-} HAEntity;
-*/
 
 class HAEntity
 {

@@ -58,7 +58,7 @@ void set_long_lived_access_token(const char *new_long_lived_access_token)
         ESP_LOGV(TAG, "Set new LLAT to: %s", long_lived_access_token);
 }
 
-char *post_req(char *path, char *data, bool return_response)
+char *post_req(const char *path, const char *data, bool return_response)
 {
         if (!ha_url || !long_lived_access_token) {
                 ESP_LOGE(TAG, "Failed to upload data: ha_url or access token not set yet");
@@ -154,7 +154,7 @@ char *post_req(char *path, char *data, bool return_response)
         }
 }
 
-char *get_req(char *path)
+char *get_req(const char *path)
 {
         if (!ha_url || !long_lived_access_token) {
                 ESP_LOGE(TAG, "Failed to GET: ha_url or access token not set yet");

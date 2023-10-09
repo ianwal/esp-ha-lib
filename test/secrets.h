@@ -1,3 +1,6 @@
-#define LONG_LIVED_ACCESS_TOKEN "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIzNGNlMzY4NGQ5NmY0MjExODEwMGE5NTVkZTY5OWYyYyIsImlhdCI6MTY4NTY0MzQ0NCwiZXhwIjoyMDAxMDAzNDQ0fQ.UKlGTqiqDEQ5glUp5ba3YWqxAmu3704jLAzGbHdkIS4"
+#define LONG_LIVED_ACCESS_TOKEN                                                                                        \
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."                                                                        \
+        "eyJpc3MiOiJkY2QxYmRiYTVjNGU0M2VlYjU0ZmVkMzMxMTVlYzNiZiIsImlhdCI6MTY5NjgxNDgwMywiZXhwIjoyMDEyMTc0ODAzfQ.t6dN-" \
+        "zPe-CnjQLPYqYeM0Pff0rBfyOlOBsjYTekwSqk"
 // HA_URL must be in the form "http://haurl.com" with no leading slash
-#define HA_URL ""
+#define HA_URL "http://192.168.68.63:8123"

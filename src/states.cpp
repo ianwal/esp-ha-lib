@@ -15,22 +15,22 @@ static const char *TAG = "States";
 // Create API request to home assistant with entity data
 void post_entity(HAEntity *entity)
 {
-        if (!entity || !entity->entity_id || !entity->state) {
-                ESP_LOGE(TAG, "Failed to post entity. Entity or struct members are null.");
+        if (!entity || !entity->entity_id) {
+                ESP_LOGE(TAG, "Failed to post entity. Entity or entity members are null.");
                 return;
         }
         cJSON *json_api_req = cJSON_CreateObject();
 
-        cJSON_AddItemToObject(json_api_req, "state", cJSON_CreateString(entity->state));
+        cJSON_AddItemToObject(json_api_req, "state", cJSON_CreateString(entity->state.c_str()));
         cJSON_AddItemToObject(json_api_req, "attributes", cJSON_Duplicate(entity->attributes, true));
 
         char *jsonstr = cJSON_Print(json_api_req);
-        // ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
+        ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
 
         char path[sizeof(STATESPATH) + strlen(entity->entity_id) + 1 + 1]; // +1 for the / in the path
         snprintf(path, sizeof(STATESPATH) + strlen(entity->entity_id) + 1 + 1, "%s/%s", STATESPATH, entity->entity_id);
 
-        // ESP_LOGI(TAG, "Path - %s", path);
+        ESP_LOGI(TAG, "Path - %s", path);
 
         post_req(path, jsonstr, false);
         free(jsonstr);
@@ -88,7 +88,7 @@ static HAEntity *parse_entity_str(char *entitystr)
         if (cJSON_IsNull(state) || !cJSON_IsString(state)) {
                 ESP_LOGI(TAG, "Entity has no state or is not a string.");
         } else {
-                entity->state = strdup(cJSON_GetStringValue(state));
+                entity->state = std::string(cJSON_GetStringValue(state));
         }
 
         cJSON *entity_id = cJSON_GetObjectItem(jsonreq, "entity_id");
@@ -146,32 +146,26 @@ HAEntity *get_entity(const char *entity_name)
 // Create a new HAEntity
 HAEntity *HAEntity_create(void)
 {
-        HAEntity *newEntity = (HAEntity *)malloc(sizeof(HAEntity));
-        if (!newEntity) {
-                return NULL;
-        }
-        newEntity->state = NULL;
-        newEntity->attributes = NULL;
+        HAEntity *newEntity = new HAEntity;
         strcpy(newEntity->last_changed, "");
         strcpy(newEntity->last_updated, "");
         return newEntity;
 }
 
 // Frees HAEntity
-void HAEntity_delete(HAEntity *item)
+void HAEntity_delete(HAEntity *entity)
 {
-        if (item == NULL) {
-                return;
-        }
-        if (item->state != NULL) {
-                free(item->state);
-                item->state = NULL;
-        }
-        if (item->attributes != NULL) {
-                cJSON_Delete(item->attributes);
-        }
-        free(item);
-        item = NULL;
+        /*
+            if (item == NULL) {
+                    return;
+            }
+            if (item->attributes != NULL) {
+                    cJSON_Delete(item->attributes);
+            }
+            free(item);
+            item = NULL;
+            */
+        delete entity;
 }
 
 // Print HAEntity
@@ -186,8 +180,8 @@ void HAEntity_print(HAEntity *item)
 
         ESP_LOGI(TAG, "entity_id: %s", item->entity_id);
 
-        if (item->state) {
-                ESP_LOGI(TAG, "state: %s", item->state);
+        if (item->state.size() > 0) {
+                ESP_LOGI(TAG, "state: %s", item->state.c_str());
         } else {
                 ESP_LOGI(TAG, "no state");
         }

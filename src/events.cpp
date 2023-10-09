@@ -66,12 +66,7 @@ HAEvent get_event_from_events(const char *event_type, cJSON *events)
 // Fires an event with event_type. You can pass an optional JSON object to be used as event_data
 void post_event(const char *event_type, cJSON *event_data)
 {
-        cJSON *json_api_req;
-        if (event_data) {
-                json_api_req = cJSON_Duplicate(event_data, true);
-        } else {
-                json_api_req = cJSON_CreateObject();
-        }
+        cJSON *json_api_req = event_data ? cJSON_Duplicate(event_data, true) : cJSON_CreateObject();
 
         char *jsonstr = cJSON_Print(json_api_req);
         // ESP_LOGI(TAG, "JSON Str - %s", jsonstr);

@@ -44,14 +44,14 @@ void test_entity_uploadreceive(void)
 
         entity.post();
 
-        HAEntity *newEntity = get_entity(entity_id);
+        HAEntity *newEntity{get_entity(entity_id)};
         TEST_ASSERT_NOT_NULL(newEntity);
-        const float fstate = std::stof(newEntity->state);
+        const float fstate{std::stof(newEntity->state)};
 
         ESP_LOGI(TAG, "Uploaded: %f, Received %f", state, fstate);
 
         // HA only stores floats to 2 decimal places it seems
-        constexpr const float epsilon = 1e-2;
+        constexpr const float epsilon{1e-2};
         TEST_ASSERT_FLOAT_WITHIN(epsilon, state, fstate);
         delete newEntity;
 }
@@ -66,7 +66,7 @@ void test_api_running(void)
 void test_HAEntity_print(void)
 {
 
-        HAEntity entity = {
+        HAEntity entity{
             .entity_id = "print_test1",
             .state = "on!",
             .attributes = cJSON_Parse("{\"unit_of_measurement\":\"Test Units\",\"friendly_name\":\"esp ha libtest\"}"),
@@ -79,7 +79,7 @@ void test_HAEntity_print(void)
 // Needs entity "sun.sun" which I think is built in or a substitute on a live home assistant to connect to
 void test_print_real_HAEntity(void)
 {
-        HAEntity *entity = get_entity("sun.sun");
+        HAEntity *entity{get_entity("sun.sun")};
         TEST_ASSERT_NOT_NULL(entity);
         entity->print();
         delete entity;

@@ -175,9 +175,8 @@ void test_set_url_and_token()
         set_ha_url(HA_URL);
         set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
 
-        // check that set was successful
-        TEST_ASSERT_EQUAL_STRING_MESSAGE(HA_URL, ha_url, "HA_URL failed to be set.");
-        TEST_ASSERT_EQUAL_STRING_MESSAGE(LONG_LIVED_ACCESS_TOKEN, long_lived_access_token,
+        TEST_ASSERT_EQUAL_STRING_MESSAGE(HA_URL, ha_url.c_str(), "HA_URL failed to be set.");
+        TEST_ASSERT_EQUAL_STRING_MESSAGE(LONG_LIVED_ACCESS_TOKEN, long_lived_access_token.c_str(),
                                          "long_lived_access_token failed to be set.");
 }
 

@@ -7,8 +7,8 @@ constexpr const char *STATESPATH = "/api/states";
 constexpr const char *CONFIGPATH = "/api/config";
 constexpr const char *CHECKCONFIGPATH = "/api/config/core/check_config";
 
-extern char *ha_url;
-extern char *long_lived_access_token;
+extern std::string ha_url;
+extern std::string long_lived_access_token;
 
 void set_ha_url(const char *new_url);
 void set_long_lived_access_token(const char *new_long_lived_access_token);

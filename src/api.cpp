@@ -6,11 +6,12 @@ extern "C" {
 #include "api.hpp"
 #include <cstdlib>
 #include <string>
+
 static constexpr const char *TAG = "API";
 
 // Set with set_ha_url()
 std::string ha_url;
-// Set with set_long_lived_access_token
+// Set with set_long_lived_access_token()
 std::string long_lived_access_token;
 
 // Call this before doing anything with the library

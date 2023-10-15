@@ -25,7 +25,7 @@ extern "C" {
 #include "esp_ha_lib.hpp"
 #include <string>
 
-static const char *TAG = "TESTING";
+static constexpr const char *TAG = "TESTING";
 
 // Attemps to upload and get back a float for a test entity
 void test_entity_uploadreceive(void)

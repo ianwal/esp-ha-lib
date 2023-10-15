@@ -16,6 +16,9 @@ class HAEntity
 
         // Create API request to HA with entity data
         void post();
+
+        static HAEntity *get(const std::string &entitystr);
+
         // ex. unit_of_measurement, friendly_name
         void add_attribute(const char *key, const char *value);
         void print();
@@ -24,17 +27,11 @@ class HAEntity
 
       private:
         static constexpr const char *TAG = "States";
+        static HAEntity *parse_entity_str(const std::string &entitystr);
+        static std::string get_entity_req(const std::string &entity_name);
 };
-
-[[deprecated("Use HAEntity::add_attribute() instead.")]] void add_entity_attribute(const char *key, const char *value,
-                                                                                   HAEntity *entity);
-HAEntity *get_entity(const std::string &entity_name);
-
-[[deprecated("Use HAEntity::post() instead.")]] void post_entity(HAEntity *entity);
 
 void set_ha_url(const char *url);
 void set_long_lived_access_token(const char *new_long_lived_access_token);
-
-HAEntity *HAEntity_create(void);
 
 cJSON *get_states(void);

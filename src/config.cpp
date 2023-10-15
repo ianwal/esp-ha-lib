@@ -2,11 +2,11 @@
 extern "C" {
 #include "cJSON.h"
 #include "esp_log.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 }
 #include "api.hpp"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 
 static constexpr const char *TAG = "Config";
@@ -15,12 +15,9 @@ static std::string get_config_req(void)
 {
         std::string req = get_req(CONFIGPATH);
 
-        /* TODO: Fix
-        if (!req) {
+        if (req.empty()) {
                 ESP_LOGE(TAG, "API GET request failed");
-                return NULL;
         }
-        */
         return req;
 }
 
@@ -41,16 +38,15 @@ cJSON *get_config(void)
 bool check_config(void)
 {
         constexpr const char *ok_response = "{\"result\":\"valid\",\"errors\":null}";
-        char *response = post_req(CHECKCONFIGPATH, nullptr, true);
+        const std::string response = post_req(CHECKCONFIGPATH, nullptr, true);
 
         bool result;
-        if (response && strcmp(ok_response, response) == 0) {
-                ESP_LOGV(TAG, "%s", response);
+        if (!response.empty() && response.compare(ok_response) == 0) {
+                ESP_LOGV(TAG, "%s", response.c_str());
                 result = true;
         } else {
                 result = false;
         }
 
-        free(response);
         return result;
 }

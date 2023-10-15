@@ -3,11 +3,11 @@
 extern "C" {
 #include "cJSON.h"
 #include "esp_log.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 }
 #include "api.hpp"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 
 static constexpr const char *TAG = "Events";
@@ -16,12 +16,9 @@ static std::string get_events_req(void)
 {
         std::string req = get_req(EVENTSPATH);
 
-        /* TODO: Fix
-        if (!req) {
+        if (req.empty()) {
                 ESP_LOGE(TAG, "API events GET request failed");
-                return NULL;
         }
-        */
         return req;
 }
 
@@ -68,8 +65,8 @@ void post_event(const char *event_type, cJSON *event_data)
         char *jsonstr = cJSON_Print(json_api_req);
         // ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
 
-        char path[sizeof(EVENTSPATH) + strlen(event_type) + 1 + 1]; // +1 for the / in the path
-        snprintf(path, sizeof(EVENTSPATH) + strlen(event_type) + 1 + 1, "%s/%s", EVENTSPATH, event_type);
+        char path[sizeof(EVENTSPATH) + std::strlen(event_type) + 1 + 1]; // +1 for the / in the path
+        snprintf(path, sizeof(EVENTSPATH) + std::strlen(event_type) + 1 + 1, "%s/%s", EVENTSPATH, event_type);
 
         // ESP_LOGI(TAG, "Path - %s", path);
 

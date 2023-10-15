@@ -41,13 +41,12 @@ void test_entity_uploadreceive(void)
         entity.entity_id = entity_id;
         entity.add_attribute("friendly_name", friendly_entity_name);
         entity.add_attribute("unit_of_measurement", unit_of_measurement);
-
         entity.post();
 
-        HAEntity *newEntity{get_entity(entity_id)};
+        HAEntity *newEntity{HAEntity::get(entity_id)};
         TEST_ASSERT_NOT_NULL(newEntity);
+        // if std::stof fails, the program will abort
         const float fstate{std::stof(newEntity->state)};
-
         ESP_LOGI(TAG, "Uploaded: %f, Received %f", state, fstate);
 
         // HA only stores floats to 2 decimal places it seems
@@ -65,7 +64,6 @@ void test_api_running(void)
 
 void test_HAEntity_print(void)
 {
-
         HAEntity entity{
             .entity_id = "print_test1",
             .state = "on!",
@@ -79,7 +77,7 @@ void test_HAEntity_print(void)
 // Needs entity "sun.sun" which I think is built in or a substitute on a live home assistant to connect to
 void test_print_real_HAEntity(void)
 {
-        HAEntity *entity{get_entity("sun.sun")};
+        HAEntity *entity{HAEntity::get("sun.sun")};
         TEST_ASSERT_NOT_NULL(entity);
         entity->print();
         delete entity;
@@ -107,17 +105,18 @@ void test_add_entity_attribute(void)
 void test_get_events()
 {
         cJSON *events = get_events();
+        TEST_ASSERT_NOT_NULL_MESSAGE(events, "get_events() was NULL");
 
         char *jsonstr = cJSON_Print(events);
 
         // if jsonstr is null, means either get_events failed or somehow the json was parsed wrong
         TEST_ASSERT_NOT_NULL_MESSAGE(jsonstr, "get_events() was NULL");
 
-        ESP_LOGV(TAG, "Events - %s", jsonstr);
+        ESP_LOGI(TAG, "Events - %s", jsonstr);
 
         constexpr const char *ha_start_event_name = "homeassistant_start";
         HAEvent event = get_event_from_events(ha_start_event_name, events);
-        ESP_LOGV(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
+        ESP_LOGI(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
 
         free(jsonstr);
 
@@ -131,7 +130,7 @@ void test_get_event_from_events()
         HAEvent event = get_event_from_events("homeassistant_start", events);
         TEST_ASSERT_EQUAL_STRING("homeassistant_start", event.event);
 
-        ESP_LOGV(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
+        ESP_LOGI(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
 
         cJSON_Delete(events);
 }
@@ -142,7 +141,7 @@ void test_get_config()
 {
         cJSON *config = get_config();
         char *jsonstr = cJSON_Print(config);
-        ESP_LOGV(TAG, "Config - %s", jsonstr);
+        ESP_LOGI(TAG, "Config - %s", jsonstr);
         TEST_ASSERT_NOT_EQUAL_MESSAGE(0, cJSON_GetArraySize(config), "Config GET failed.");
         free(jsonstr);
         cJSON_Delete(config);
@@ -152,7 +151,7 @@ void test_get_states()
 {
         cJSON *states = get_states();
         char *jsonstr = cJSON_Print(states);
-        ESP_LOGV(TAG, "Config - %s", jsonstr);
+        ESP_LOGI(TAG, "States - %s", jsonstr);
         TEST_ASSERT_NOT_EQUAL_MESSAGE(0, cJSON_GetArraySize(states), "States GET failed.");
         free(jsonstr);
         cJSON_Delete(states);

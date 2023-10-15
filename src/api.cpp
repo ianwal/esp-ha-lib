@@ -2,9 +2,9 @@ extern "C" {
 #include "cJSON.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
-#include <stdlib.h>
 }
 #include "api.hpp"
+#include <cstdlib>
 #include <string>
 static constexpr const char *TAG = "API";
 
@@ -40,15 +40,15 @@ void set_long_lived_access_token(const char *new_long_lived_access_token)
         ESP_LOGV(TAG, "Set new LLAT to: %s", long_lived_access_token.c_str());
 }
 
-char *post_req(const char *path, const char *data, bool return_response)
+std::string post_req(const char *path, const char *data, const bool return_response)
 {
         if (ha_url.empty() || long_lived_access_token.empty()) {
                 ESP_LOGE(TAG, "Failed to upload data: ha_url or access token not set yet");
-                return NULL;
+                return std::string{};
         }
 
         // Create API URL. Will look something like http://HA_URL/api/states/entity.entity_NAME
-        std::string api_URL{ha_url + path};
+        const std::string api_URL{ha_url + path};
 
         constexpr const char *bearer = "Bearer ";
         const std::string auth_data{bearer + long_lived_access_token};
@@ -58,13 +58,11 @@ char *post_req(const char *path, const char *data, bool return_response)
         esp_http_client_config_t home_assistant_config = {
             .url = api_URL.c_str(),
             .method = HTTP_METHOD_POST,
-            .timeout_ms = 5000,
+            .timeout_ms = 10000,
             .disable_auto_redirect = false,
             .is_async = false,
             .skip_cert_common_name_check = true,
         };
-
-        char *response_buffer = nullptr;
 
         ESP_LOGV(TAG, "Attempting connection to %s", api_URL.c_str());
 
@@ -72,19 +70,22 @@ char *post_req(const char *path, const char *data, bool return_response)
         esp_http_client_set_header(client, "Authorization", auth_data.c_str());
         esp_http_client_set_header(client, "Content-Type", "application/json");
 
-        if (data)
+        if (data) {
                 esp_http_client_set_post_field(client, data, strlen(data));
+        }
 
-        // esp_err_t err = esp_http_client_perform(client);
         //  POST data
         esp_err_t err = esp_http_client_perform(client);
         if (err == ESP_OK) {
-                if (data)
+                if (data) {
                         ESP_LOGV(TAG, "Sent %s to %s", data, api_URL.c_str());
+                }
         } else {
                 ESP_LOGE(TAG, "Could not send upload entity data.");
         }
 
+        char *response_buffer = nullptr;
+        std::string ret_str;
         // POST Response handling for when return_response=true
         if (return_response) {
                 if (err == ESP_OK) { // only get response if the above post was OK
@@ -101,18 +102,18 @@ char *post_req(const char *path, const char *data, bool return_response)
                                                 if (post_response != ESP_FAIL) {
                                                         response_buffer[content_length] =
                                                             '\0'; // ensure response is null-terminated
+                                                        ret_str = std::string{response_buffer};
                                                         ESP_LOGV(TAG, "Content length %lld Read: %s", content_length,
-                                                                 response_buffer);
+                                                                 ret_str.c_str());
                                                 } else {
                                                         ESP_LOGE(TAG, "POST Response failed %s",
                                                                  esp_err_to_name(post_response));
-                                                        free(response_buffer);
-                                                        response_buffer = NULL;
                                                 }
+                                                free(response_buffer);
                                         }
                                 }
                         } else {
-                                ESP_LOGE(TAG, "Could not send upload entity data.");
+                                ESP_LOGE(TAG, "POST req failed. Could not send upload entity data.");
                         }
                 }
         }
@@ -120,21 +121,20 @@ char *post_req(const char *path, const char *data, bool return_response)
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
 
-        // Could be nullptr!
-        return response_buffer;
+        return ret_str;
 }
 
 std::string get_req(const char *path)
 {
         if (ha_url.empty() || long_lived_access_token.empty()) {
                 ESP_LOGE(TAG, "Failed to GET: ha_url or access token not set yet");
-                return NULL;
+                return std::string{};
         }
 
         char *local_response_buffer = nullptr;
 
         // Create API URL. Will look something like http://HA_URL/api/states/entity.entity_NAME
-        std::string api_URL{ha_url + path};
+        const std::string api_URL{ha_url + path};
 
         constexpr const char *bearer = "Bearer ";
         const std::string auth_data{bearer + long_lived_access_token};
@@ -143,7 +143,7 @@ std::string get_req(const char *path)
         esp_http_client_config_t config = {
             .url = api_URL.c_str(),
             .method = HTTP_METHOD_GET,
-            .timeout_ms = 5000,
+            .timeout_ms = 10000,
             .disable_auto_redirect = false,
             .user_data = local_response_buffer,
             .is_async = false,
@@ -154,11 +154,12 @@ std::string get_req(const char *path)
         esp_http_client_set_header(client, "Authorization", auth_data.c_str());
         esp_http_client_set_header(client, "Content-Type", "application/json");
 
-        bool failed = false;
+        std::string ret_str;
+        [[maybe_unused]] bool failed = false;
         // Attempt to make API request to Home Assistant
-        esp_err_t err = esp_http_client_open(client, 0);
+        const esp_err_t err = esp_http_client_open(client, 0);
         if (err == ESP_OK) {
-                esp_err_t fetcherr = esp_http_client_fetch_headers(client);
+                const esp_err_t fetcherr = esp_http_client_fetch_headers(client);
                 if (fetcherr != ESP_FAIL) {
                         int64_t content_length = esp_http_client_get_content_length(client);
                         local_response_buffer = (char *)malloc(content_length + 1);
@@ -169,7 +170,9 @@ std::string get_req(const char *path)
                         } else {
                                 esp_http_client_read_response(client, local_response_buffer, content_length);
                                 local_response_buffer[content_length] = '\0'; // ensure response is null-terminated
-                                ESP_LOGV(TAG, "Read %s, \nSize: %lld", local_response_buffer, content_length);
+                                ret_str = std::string{local_response_buffer};
+                                free(local_response_buffer);
+                                ESP_LOGV(TAG, "Read %s, \nSize: %lld", ret_str.c_str(), content_length);
                         }
                 } else {
                         ESP_LOGE(TAG, "Failed to fetch request: %s", esp_err_to_name(fetcherr));
@@ -183,26 +186,15 @@ std::string get_req(const char *path)
         esp_http_client_close(client);
         esp_http_client_cleanup(client);
 
-        if (failed) {
-                free(local_response_buffer);
-                local_response_buffer = nullptr;
-                return std::string("");
-        }
-
-        std::string retstr{local_response_buffer};
-        free(local_response_buffer);
-        return retstr;
+        return ret_str;
 }
 
 bool get_api_status(void)
 {
         const std::string req = get_req("/api/");
-        // TODO: check for error
-        /*
-        if (!creq) {
+        if (req.empty()) {
                 return false;
         }
-        */
 
         cJSON *jsonreq = cJSON_Parse(req.c_str());
 

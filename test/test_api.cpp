@@ -27,7 +27,7 @@ extern "C" {
 
 static constexpr const char *TAG = "TESTING";
 
-// Attemps to upload and get back a float for a test entity
+// Attempts to upload and get back a float for a test entity
 void test_entity_uploadreceive(void)
 {
         // entity name cannot contain special characters other than _ or . it seems

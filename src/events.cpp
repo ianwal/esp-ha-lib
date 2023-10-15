@@ -1,45 +1,42 @@
-#include "events.h"
-#include "api.h"
+#include "events.hpp"
+
+extern "C" {
 #include "cJSON.h"
 #include "esp_log.h"
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+}
+#include "api.hpp"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
 
-static const char *TAG = "Events";
+static constexpr const char *TAG = "Events";
 
-static char *get_events_req(void)
+static std::string get_events_req(void)
 {
-        char *req = get_req(EVENTSPATH);
+        std::string req = get_req(EVENTSPATH);
 
-        if (!req) {
+        if (req.empty()) {
                 ESP_LOGE(TAG, "API events GET request failed");
-                return NULL;
         }
-
         return req;
 }
 
-static cJSON *parse_events_str(char *eventsstr)
+static cJSON *parse_events_str(const std::string &eventsstr)
 {
-        if (!eventsstr)
-                return NULL;
-
-        cJSON *jsonreq = cJSON_Parse(eventsstr);
+        cJSON *jsonreq = cJSON_Parse(eventsstr.c_str());
         return jsonreq;
 }
 
 cJSON *get_events(void)
 {
-        char *eventsstr = get_events_req();
+        const std::string eventsstr = get_events_req();
         cJSON *events = parse_events_str(eventsstr);
-        free(eventsstr);
         return events;
 }
 
 // Get single event by name from a cJSON array of events
-HAEvent get_event_from_events(char *event_type, cJSON *events)
+HAEvent get_event_from_events(const char *event_type, cJSON *events)
 {
         // TODO: Add safety checks for cJSON object (isarray, etc.)
         // Should the event.event be set to something like "Not Found" as the default case?
@@ -61,20 +58,15 @@ HAEvent get_event_from_events(char *event_type, cJSON *events)
 
 // Create API request to home assistant with events data
 // Fires an event with event_type. You can pass an optional JSON object to be used as event_data
-void post_event(char *event_type, cJSON *event_data)
+void post_event(const char *event_type, cJSON *event_data)
 {
-        cJSON *json_api_req;
-        if (event_data) {
-                json_api_req = cJSON_Duplicate(event_data, true);
-        } else {
-                json_api_req = cJSON_CreateObject();
-        }
+        cJSON *json_api_req = event_data ? cJSON_Duplicate(event_data, true) : cJSON_CreateObject();
 
         char *jsonstr = cJSON_Print(json_api_req);
         // ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
 
-        char path[sizeof(EVENTSPATH) + strlen(event_type) + 1 + 1]; // +1 for the / in the path
-        snprintf(path, sizeof(EVENTSPATH) + strlen(event_type) + 1 + 1, "%s/%s", EVENTSPATH, event_type);
+        char path[sizeof(EVENTSPATH) + std::strlen(event_type) + 1 + 1]; // +1 for the / in the path
+        snprintf(path, sizeof(EVENTSPATH) + std::strlen(event_type) + 1 + 1, "%s/%s", EVENTSPATH, event_type);
 
         // ESP_LOGI(TAG, "Path - %s", path);
 

@@ -1,3 +1,5 @@
+
+extern "C" {
 #include "cJSON.h"
 #include "esp_event.h"
 #include "esp_http_client.h"
@@ -14,45 +16,43 @@
 
 #include "driver/gpio.h"
 
-#include "esp_ha_lib.h"
 #include "secrets.h"
 #include "wifi.h"
 
 #include <stdlib.h>
 #include <unity.h>
+}
+#include "esp_ha_lib.hpp"
+#include <string>
 
-static const char *TAG = "TESTING";
+static constexpr const char *TAG = "TESTING";
 
-// Attemps to upload and get back a float for a test entity
+// Attempts to upload and get back a float for a test entity
 void test_entity_uploadreceive(void)
 {
-        // entity name cannot contain special characters other than _ or . it appears
-        char *entity_id = "sensor.esphalibtest";
-        char *friendly_entity_name = "esp ha lib test";
-        char *unit_of_measurement = "Test Units";
-        float state = (esp_random() % 100);
+        // entity name cannot contain special characters other than _ or . it seems
+        constexpr const char *entity_id = "sensor.esphalibtest";
+        constexpr const char *friendly_entity_name = "esp ha lib test";
+        constexpr const char *unit_of_measurement = "Test Units";
+        const float state = (esp_random() % 100);
 
-        HAEntity *entity = HAEntity_create();
-        entity->state = malloc(8);
-        snprintf(entity->state, 8, "%.2f", state);
-        strcpy(entity->entity_id, entity_id);
-        add_entity_attribute("friendly_name", friendly_entity_name, entity);
-        add_entity_attribute("unit_of_measurement", unit_of_measurement, entity);
+        HAEntity entity;
+        entity.state = std::to_string(state);
+        entity.entity_id = entity_id;
+        entity.add_attribute("friendly_name", friendly_entity_name);
+        entity.add_attribute("unit_of_measurement", unit_of_measurement);
+        entity.post();
 
-        post_entity(entity);
-
-        HAEntity *newEntity = get_entity(entity_id);
+        HAEntity *newEntity{HAEntity::get(entity_id)};
         TEST_ASSERT_NOT_NULL(newEntity);
-        float fstate = strtof(newEntity->state, NULL);
-
+        // if std::stof fails, the program will abort
+        const float fstate{std::stof(newEntity->state)};
         ESP_LOGI(TAG, "Uploaded: %f, Received %f", state, fstate);
 
         // HA only stores floats to 2 decimal places it seems
-        float epsilon = 1e-2;
-
-        HAEntity_delete(entity);
-        HAEntity_delete(newEntity);
+        constexpr const float epsilon{1e-2};
         TEST_ASSERT_FLOAT_WITHIN(epsilon, state, fstate);
+        delete newEntity;
 }
 
 void test_api_running(void)
@@ -64,64 +64,59 @@ void test_api_running(void)
 
 void test_HAEntity_print(void)
 {
-        HAEntity entity = {.entity_id = "print_test1",
-                           .last_updated = "2021-02-12T10:41:28.422190+00:00",
-                           .last_changed = "2023-05-17T10:41:28.855123+00:00"};
-        entity.attributes =
-            cJSON_Parse("{\"unit_of_measurement\":\"Test Units\",\"friendly_name\":\"esp ha lib test\"}");
-        entity.state = strdup("on!");
-        HAEntity_print(&entity);
-
-        cJSON_Delete(entity.attributes);
-        free(entity.state);
+        HAEntity entity{
+            .entity_id = "print_test1",
+            .state = "on!",
+            .attributes = cJSON_Parse("{\"unit_of_measurement\":\"Test Units\",\"friendly_name\":\"esp ha libtest\"}"),
+            .last_changed = const_cast<char *>("2023-05-17T10:41:28.855123+00:00"),
+            .last_updated = const_cast<char *>("2021-02-12T10:41:28.422190+00:00")};
+        entity.print();
 }
 
 // Tests printing a real HAEntity from Home Assistant
 // Needs entity "sun.sun" which I think is built in or a substitute on a live home assistant to connect to
 void test_print_real_HAEntity(void)
 {
-        HAEntity *entity = HAEntity_create();
-        entity = get_entity("sun.sun");
-
+        HAEntity *entity{HAEntity::get("sun.sun")};
         TEST_ASSERT_NOT_NULL(entity);
-        HAEntity_print(entity);
-        HAEntity_delete(entity);
+        entity->print();
+        delete entity;
 }
 
 // Tests adding a new entity attribute to an HAEntity
 void test_add_entity_attribute(void)
 {
-        HAEntity *entity = HAEntity_create();
-        char *entity_name = "sensor.randomsensortest";
-        char *friendly_entity_name = "esp ha lib sensor test";
-        char *unit_of_measurement = "test units";
-        add_entity_attribute("entity_name", entity_name, entity);
-        add_entity_attribute("friendly_entity_name", friendly_entity_name, entity);
-        add_entity_attribute("unit_of_measurement", unit_of_measurement, entity);
+        HAEntity entity;
+        constexpr const char *entity_name = "sensor.randomsensortest";
+        constexpr const char *friendly_entity_name = "esp ha lib sensor test";
+        constexpr const char *unit_of_measurement = "test units";
+        entity.add_attribute("entity_name", entity_name);
+        entity.add_attribute("friendly_entity_name", friendly_entity_name);
+        entity.add_attribute("unit_of_measurement", unit_of_measurement);
 
         TEST_ASSERT_EQUAL_STRING(entity_name,
-                                 cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "entity_name")));
+                                 cJSON_GetStringValue(cJSON_GetObjectItem(entity.attributes, "entity_name")));
         TEST_ASSERT_EQUAL_STRING(friendly_entity_name,
-                                 cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "friendly_entity_name")));
+                                 cJSON_GetStringValue(cJSON_GetObjectItem(entity.attributes, "friendly_entity_name")));
         TEST_ASSERT_EQUAL_STRING(unit_of_measurement,
-                                 cJSON_GetStringValue(cJSON_GetObjectItem(entity->attributes, "unit_of_measurement")));
-
-        HAEntity_delete(entity);
+                                 cJSON_GetStringValue(cJSON_GetObjectItem(entity.attributes, "unit_of_measurement")));
 }
 
 void test_get_events()
 {
         cJSON *events = get_events();
+        TEST_ASSERT_NOT_NULL_MESSAGE(events, "get_events() was NULL");
 
         char *jsonstr = cJSON_Print(events);
 
         // if jsonstr is null, means either get_events failed or somehow the json was parsed wrong
         TEST_ASSERT_NOT_NULL_MESSAGE(jsonstr, "get_events() was NULL");
 
-        ESP_LOGV(TAG, "Events - %s", jsonstr);
+        ESP_LOGI(TAG, "Events - %s", jsonstr);
 
-        HAEvent event = get_event_from_events("homeassistant_start", events);
-        ESP_LOGV(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
+        constexpr const char *ha_start_event_name = "homeassistant_start";
+        HAEvent event = get_event_from_events(ha_start_event_name, events);
+        ESP_LOGI(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
 
         free(jsonstr);
 
@@ -135,7 +130,7 @@ void test_get_event_from_events()
         HAEvent event = get_event_from_events("homeassistant_start", events);
         TEST_ASSERT_EQUAL_STRING("homeassistant_start", event.event);
 
-        ESP_LOGV(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
+        ESP_LOGI(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
 
         cJSON_Delete(events);
 }
@@ -146,7 +141,7 @@ void test_get_config()
 {
         cJSON *config = get_config();
         char *jsonstr = cJSON_Print(config);
-        ESP_LOGV(TAG, "Config - %s", jsonstr);
+        ESP_LOGI(TAG, "Config - %s", jsonstr);
         TEST_ASSERT_NOT_EQUAL_MESSAGE(0, cJSON_GetArraySize(config), "Config GET failed.");
         free(jsonstr);
         cJSON_Delete(config);
@@ -156,7 +151,7 @@ void test_get_states()
 {
         cJSON *states = get_states();
         char *jsonstr = cJSON_Print(states);
-        ESP_LOGV(TAG, "Config - %s", jsonstr);
+        ESP_LOGI(TAG, "States - %s", jsonstr);
         TEST_ASSERT_NOT_EQUAL_MESSAGE(0, cJSON_GetArraySize(states), "States GET failed.");
         free(jsonstr);
         cJSON_Delete(states);
@@ -179,9 +174,8 @@ void test_set_url_and_token()
         set_ha_url(HA_URL);
         set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
 
-        // check that set was successful
-        TEST_ASSERT_EQUAL_STRING_MESSAGE(HA_URL, ha_url, "HA_URL failed to be set.");
-        TEST_ASSERT_EQUAL_STRING_MESSAGE(LONG_LIVED_ACCESS_TOKEN, long_lived_access_token,
+        TEST_ASSERT_EQUAL_STRING_MESSAGE(HA_URL, ha_url.c_str(), "HA_URL failed to be set.");
+        TEST_ASSERT_EQUAL_STRING_MESSAGE(LONG_LIVED_ACCESS_TOKEN, long_lived_access_token.c_str(),
                                          "long_lived_access_token failed to be set.");
 }
 
@@ -203,9 +197,11 @@ int runUnityTests(void)
         return UNITY_END();
 }
 
+extern "C" {
 void app_main(void)
 {
         wifi_init_sta();
 
         runUnityTests();
+}
 }

@@ -1,5 +1,5 @@
 # esp-ha-lib
-WIP library for interfacing with [Home Assistants REST API](https://developers.home-assistant.io/docs/api/rest/) using [cJSON](https://github.com/DaveGamble/cJSON)
+WIP CPP library to interface with [Home Assistant's REST API](https://developers.home-assistant.io/docs/api/rest/) using [cJSON](https://github.com/DaveGamble/cJSON)
 
 
 
@@ -7,7 +7,7 @@ WIP library for interfacing with [Home Assistants REST API](https://developers.h
 
 Using esp-idf
  - Download and extract the repository to the components folder of your ESP-IDF project
- - Include `esp_ha_lib.h` in your code
+ - Include `esp_ha_lib.hpp` in your code
 
 
 Using PlatformIO, on the `env` section of `platformio.ini`,  add the following:
@@ -17,7 +17,7 @@ lib_deps = https://github.com/ianwal/esp-ha-lib.git
 
 And then finally include:
 
-```#include "esp_ha_lib.h"```
+```#include "esp_ha_lib.hpp"```
 
 
 ## Usage
@@ -25,8 +25,8 @@ And then finally include:
 Before doing anything, you must set your Home Assistant URL and [Long Lived Access Token](https://developers.home-assistant.io/docs/auth_api/#long-lived-access-token) in order to access the api.
 
 ```c
-#define HA_URL <your url e.g. http://homeassistant.com>
-#define LONG_LIVED_ACCESS_TOKEN <your access token>
+constexpr const char *HA_URL = <your url e.g. http://homeassistant.com>;
+constexpr const char *LONG_LIVED_ACCESS_TOKEN = <your access token>;
 
 set_ha_url(HA_URL);
 set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
@@ -36,29 +36,26 @@ set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
 
 Path: /api/states/<entity_id>
 
-POST/GET using get_entity() and post_entity() using HAEntity struct
+POST/GET using HAEntity::post() and HAEntity::get().
 
 To POST an entity, the HAEntity req must have at least the entity_id. It should have the state as well since that is the main entity data value. 
 
-To GET an entity, only the entity name is needed. For example, to get an entity named sensor.mysensor, just call get_entity("sensor.mysensor") and the corresponding HAEntity will be returned with entity data (or NULL if it fails). This must be manually freed using HAEntity_delete().
+To GET an entity, only the entity name is needed. For example, to get an entity named sensor.mysensor, just call HAEntity::get("sensor.mysensor") and the corresponding HAEntity will be returned with entity data (or nullptr if it fails).
 
-Attributes can be added as a key:value pair using add_entity_attribute()
+Attributes can be added as a key:value pair using HAEntity::add_attribute()
 
 ### Example:
-To get an entity with the entity_id sun.sun
+To get an entity with the entity_id "sun.sun"
 
 ```c
-// Create new entity
-HAEntity* entity = HAEntity_create();
-
-// GET request
-entity = get_entity("sun.sun");
+// Create new entity with GET request
+HAEntity* entity{HAEntity::get("sun.sun")};
 
 // Print
-HAEntity_print(entity);
+entity.print();
 
 // Safely free
-HAEntity_delete(entity);
+delete entity;
 ```
 
 Output:
@@ -119,7 +116,7 @@ Requirements:
 
 ### Steps:
 
-1. Fill in your secrets in `src/secrets.h`, `test/secrets.h`, and `wifisecrets.h`
+1. Fill in your secrets in `src/secrets.hpp`, `test/secrets.hpp`, and `wifisecrets.h`
     - `HA_URL` is the HOST PC IP e.g. http://192.168.1.72:8123
         - I am looking into a way to avoid/automate this
     - Long Lived Access Token is already generated and does not need to be filled in

@@ -52,7 +52,7 @@ To get an entity with the entity_id "sun.sun"
 HAEntity* entity{HAEntity::get("sun.sun")};
 
 // Print
-entity.print(entity);
+entity.print();
 
 // Safely free
 delete entity;

@@ -2,7 +2,6 @@
 extern "C" {
 #include "wifi.h"
 }
-
 #include "cJSON.h"
 #include "esp_event.h"
 #include "esp_http_client.h"
@@ -33,7 +32,7 @@ namespace testapi
 
 namespace
 {
-constexpr const char *TAG = "TESTING";
+constexpr const char *TAG = "test_api";
 }
 
 namespace api = esphalib::api;
@@ -61,13 +60,15 @@ void test_entity_uploadreceive(void)
 
         HAEntity *newEntity{HAEntity::get(entity_id)};
         TEST_ASSERT_NOT_NULL(newEntity);
-        // if std::stof fails, the program will abort
-        const float fstate{std::stof(newEntity->state)};
-        ESP_LOGI(TAG, "Uploaded: %f, Received %f", state, fstate);
+        if (newEntity != nullptr) {
+                // if std::stof fails, the program will abort
+                const float fstate{std::stof(newEntity->state)};
+                ESP_LOGI(TAG, "Uploaded: %f, Received %f", state, fstate);
 
-        // HA only stores floats to 2 decimal places it seems
-        constexpr const float epsilon{1e-2};
-        TEST_ASSERT_FLOAT_WITHIN(epsilon, state, fstate);
+                // HA only stores floats to 2 decimal places it seems
+                constexpr const float epsilon{1e-2};
+                TEST_ASSERT_FLOAT_WITHIN(epsilon, state, fstate);
+        }
         delete newEntity;
 }
 
@@ -156,8 +157,11 @@ void test_post_event() { event::post_event("event.test", NULL); }
 void test_get_config()
 {
         cJSON *config = esphalib::config::get_config();
-        char *jsonstr = cJSON_Print(config);
-        ESP_LOGI(TAG, "Config - %s", jsonstr);
+        auto jsonstr = cJSON_Print(config);
+        TEST_ASSERT_NOT_NULL_MESSAGE(jsonstr, "get_config() was NULL");
+        if (jsonstr != nullptr) {
+                ESP_LOGI(TAG, "Config - %s", jsonstr);
+        }
         TEST_ASSERT_NOT_EQUAL_MESSAGE(0, cJSON_GetArraySize(config), "Config GET failed.");
         free(jsonstr);
         cJSON_Delete(config);
@@ -166,8 +170,11 @@ void test_get_config()
 void test_get_states()
 {
         cJSON *states = state::get_states();
-        char *jsonstr = cJSON_Print(states);
-        ESP_LOGI(TAG, "States - %s", jsonstr);
+        auto jsonstr = cJSON_Print(states);
+        TEST_ASSERT_NOT_NULL_MESSAGE(jsonstr, "get_states() was NULL");
+        if (jsonstr != nullptr) {
+                ESP_LOGI(TAG, "States - %s", jsonstr);
+        }
         TEST_ASSERT_NOT_EQUAL_MESSAGE(0, cJSON_GetArraySize(states), "States GET failed.");
         free(jsonstr);
         cJSON_Delete(states);

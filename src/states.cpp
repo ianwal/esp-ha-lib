@@ -28,7 +28,10 @@ static std::string get_states_req(void)
 
 static cJSON *parse_states_str(const std::string &states_str)
 {
-        cJSON *jsonreq = cJSON_Parse(states_str.c_str());
+        cJSON *jsonreq = nullptr;
+        if (!states_str.empty()) {
+                jsonreq = cJSON_Parse(states_str.c_str());
+        }
         return jsonreq;
 }
 } // namespace
@@ -64,13 +67,16 @@ std::string HAEntity::get_entity_req(const std::string &entity_name)
 // Duplicates and assings the values from the parsed cJSON, then frees the cJSON
 HAEntity *HAEntity::parse_entity_str(const std::string &entitystr)
 {
+        cJSON *jsonreq = cJSON_Parse(entitystr.c_str());
+        if (jsonreq == nullptr) {
+                return nullptr;
+        }
+
         HAEntity *entity = new HAEntity;
         if (!entity) {
                 ESP_LOGE(TAG, "Failed to malloc HAEntity.");
                 return nullptr;
         }
-
-        cJSON *jsonreq = cJSON_Parse(entitystr.c_str());
 
         // Note: all the *_state_str are pointers that are freed by cJSON in the cJSON_Delete. Do not free manually.
         cJSON *json_state = cJSON_GetObjectItem(jsonreq, "state");

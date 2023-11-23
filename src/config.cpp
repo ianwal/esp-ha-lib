@@ -30,7 +30,10 @@ std::string get_config_req(void)
 
 cJSON *parse_config_str(const std::string &configstr)
 {
-        cJSON *jsonreq = cJSON_Parse(configstr.c_str());
+        cJSON *jsonreq = nullptr;
+        if (!configstr.empty()) {
+                jsonreq = cJSON_Parse(configstr.c_str());
+        }
         return jsonreq;
 }
 

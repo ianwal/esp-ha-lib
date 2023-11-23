@@ -27,7 +27,10 @@ std::string get_events_req(void)
 
 cJSON *parse_events_str(const std::string &eventsstr)
 {
-        cJSON *jsonreq = cJSON_Parse(eventsstr.c_str());
+        cJSON *jsonreq = nullptr;
+        if (!eventsstr.empty()) {
+                jsonreq = cJSON_Parse(eventsstr.c_str());
+        }
         return jsonreq;
 }
 } // namespace

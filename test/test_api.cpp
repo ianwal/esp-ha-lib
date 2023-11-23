@@ -82,7 +82,12 @@ void test_wifi_credentials_filled(void)
 // Just used for testing, does not test the library
 void test_wifi_connected(void) { TEST_ASSERT_MESSAGE(is_wifi_connected(), "WiFi is not connected"); }
 
-void test_api_running(void) { TEST_ASSERT_MESSAGE(api::get_api_status(), "API is not accessible and/or not running."); }
+void test_api_running(void)
+{
+        auto const api_status = api::get_api_status();
+        auto const expected_status = api::APIStatus_type::ONLINE;
+        TEST_ASSERT_TRUE_MESSAGE(api_status == expected_status, "API is not accessible and/or not running.");
+}
 
 void test_HAEntity_print(void)
 {

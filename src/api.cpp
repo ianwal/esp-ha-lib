@@ -200,11 +200,13 @@ std::string get_req(const char *path)
         return ret_str;
 }
 
-bool get_api_status(void)
+// Return the status of the API
+// Requires that HA is accessible or it will always return offline
+APIStatus_type get_api_status(void)
 {
         auto const req = get_req("/api/");
         if (req.empty()) {
-                return false;
+                return APIStatus_type::UNKNOWN;
         }
 
         rapidjson::Document d;
@@ -216,11 +218,11 @@ bool get_api_status(void)
 
                         constexpr const char *API_RUNNING_STR = "API running.";
                         if (strcmp(message, API_RUNNING_STR) == 0) {
-                                return true;
+                                return APIStatus_type::ONLINE;
                         }
                 }
         }
-        return false;
+        return APIStatus_type::OFFLINE;
 }
 
 } // namespace api

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace esphalib
@@ -19,9 +20,11 @@ extern std::string long_lived_access_token;
 void set_ha_url(const char *new_url);
 void set_long_lived_access_token(const char *new_long_lived_access_token);
 
+enum class APIStatus_type : int8_t { ONLINE, OFFLINE, UNKNOWN };
+
 std::string get_req(const char *path);
 std::string post_req(const char *path, const char *data, const bool return_response);
-bool get_api_status(void);
+APIStatus_type get_api_status(void);
 
 } // namespace api
 } // namespace esphalib

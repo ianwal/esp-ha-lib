@@ -1,16 +1,37 @@
-extern "C" {
+#include "states.hpp"
+#include "api.hpp"
 #include "cJSON.h"
 #include "esp_log.h"
-}
-
-#include "api.hpp"
-#include "states.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
 
-static constexpr const char *TAG = "States";
+namespace esphalib
+{
+
+namespace state
+{
+
+namespace
+{
+constexpr const char *TAG = "States";
+static std::string get_states_req(void)
+{
+        std::string req{api::get_req(api::STATESPATH)};
+
+        if (req.empty()) {
+                ESP_LOGE(TAG, "API states GET request failed");
+        }
+        return req;
+}
+
+static cJSON *parse_states_str(const std::string &states_str)
+{
+        cJSON *jsonreq = cJSON_Parse(states_str.c_str());
+        return jsonreq;
+}
+} // namespace
 
 // ex. unit_of_measurement, friendly_name
 void add_entity_attribute(const char *key, const char *value, HAEntity *entity)
@@ -30,8 +51,8 @@ void add_entity_attribute(const char *key, const char *value, HAEntity *entity)
 
 std::string HAEntity::get_entity_req(const std::string &entity_name)
 {
-        const std::string path{std::string{STATESPATH} + "/" + entity_name};
-        std::string req{get_req(path.c_str())};
+        const std::string path{std::string{api::STATESPATH} + "/" + entity_name};
+        std::string req{api::get_req(path.c_str())};
 
         if (req.empty()) {
                 ESP_LOGE(TAG, "API entity GET request failed");
@@ -107,22 +128,6 @@ HAEntity *HAEntity::get(const std::string &entity_name)
         return entity;
 }
 
-static std::string get_states_req(void)
-{
-        std::string req{get_req(STATESPATH)};
-
-        if (req.empty()) {
-                ESP_LOGE(TAG, "API states GET request failed");
-        }
-        return req;
-}
-
-static cJSON *parse_states_str(const std::string &states_str)
-{
-        cJSON *jsonreq = cJSON_Parse(states_str.c_str());
-        return jsonreq;
-}
-
 // Get cJSON of all the states from Home Assistant
 // Note: States might be really big. Mine is around 2400 char on a small install.
 cJSON *get_states(void)
@@ -146,10 +151,10 @@ void HAEntity::post()
 
         char *jsonstr = cJSON_Print(json_api_req);
 
-        const std::string path{std::string{STATESPATH} + "/" + entity_id};
+        const std::string path{std::string{api::STATESPATH} + "/" + entity_id};
 
         cJSON_Delete(json_api_req);
-        post_req(path.c_str(), jsonstr, false);
+        api::post_req(path.c_str(), jsonstr, false);
         free(jsonstr);
 }
 
@@ -203,3 +208,6 @@ HAEntity::~HAEntity()
                 attributes = nullptr;
         }
 }
+
+} // namespace state
+} // namespace esphalib

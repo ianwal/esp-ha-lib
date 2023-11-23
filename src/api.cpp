@@ -1,13 +1,20 @@
-extern "C" {
+#include "api.hpp"
 #include "cJSON.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
-}
-#include "api.hpp"
 #include <cstdlib>
 #include <string>
 
-static constexpr const char *TAG = "API";
+namespace esphalib
+{
+
+namespace api
+{
+
+namespace
+{
+constexpr const char *TAG{"API"};
+}
 
 // Set with set_ha_url()
 std::string ha_url;
@@ -220,3 +227,6 @@ bool get_api_status(void)
         cJSON_Delete(jsonreq);
         return false;
 }
+
+} // namespace api
+} // namespace esphalib

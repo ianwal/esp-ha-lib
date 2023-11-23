@@ -1,5 +1,8 @@
 
 extern "C" {
+#include "wifi.h"
+}
+
 #include "cJSON.h"
 #include "esp_event.h"
 #include "esp_http_client.h"
@@ -16,16 +19,29 @@ extern "C" {
 
 #include "driver/gpio.h"
 
-#include "secrets.h"
-#include "wifi.h"
-
-#include <stdlib.h>
-#include <unity.h>
-}
 #include "esp_ha_lib.hpp"
+#include "secrets.hpp"
+#include <stdlib.h>
 #include <string>
+#include <unity.h>
 
-static constexpr const char *TAG = "TESTING";
+namespace esphalib
+{
+
+namespace testapi
+{
+
+namespace
+{
+constexpr const char *TAG = "TESTING";
+}
+
+namespace api = esphalib::api;
+namespace event = esphalib::event;
+namespace state = esphalib::state;
+
+using esphalib::event::HAEvent;
+using esphalib::state::HAEntity;
 
 // Attempts to upload and get back a float for a test entity
 void test_entity_uploadreceive(void)
@@ -59,7 +75,7 @@ void test_api_running(void)
 {
         TEST_ASSERT_MESSAGE(is_wifi_connected(), "WiFi is not connected");
 
-        TEST_ASSERT_MESSAGE(get_api_status(), "API is not accessible and/or not running.");
+        TEST_ASSERT_MESSAGE(api::get_api_status(), "API is not accessible and/or not running.");
 }
 
 void test_HAEntity_print(void)
@@ -104,7 +120,7 @@ void test_add_entity_attribute(void)
 
 void test_get_events()
 {
-        cJSON *events = get_events();
+        cJSON *events = event::get_events();
         TEST_ASSERT_NOT_NULL_MESSAGE(events, "get_events() was NULL");
 
         char *jsonstr = cJSON_Print(events);
@@ -115,8 +131,8 @@ void test_get_events()
         ESP_LOGI(TAG, "Events - %s", jsonstr);
 
         constexpr const char *ha_start_event_name = "homeassistant_start";
-        HAEvent event = get_event_from_events(ha_start_event_name, events);
-        ESP_LOGI(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
+        auto eve = event::get_event_from_events(ha_start_event_name, events);
+        ESP_LOGI(TAG, "event:%s listener_count:%d", eve.event, eve.listener_count);
 
         free(jsonstr);
 
@@ -125,21 +141,21 @@ void test_get_events()
 
 void test_get_event_from_events()
 {
-        cJSON *events = get_events();
+        cJSON *events = event::get_events();
 
-        HAEvent event = get_event_from_events("homeassistant_start", events);
-        TEST_ASSERT_EQUAL_STRING("homeassistant_start", event.event);
+        auto eve = event::get_event_from_events("homeassistant_start", events);
+        TEST_ASSERT_EQUAL_STRING("homeassistant_start", eve.event);
 
-        ESP_LOGI(TAG, "event:%s listener_count:%d", event.event, event.listener_count);
+        ESP_LOGI(TAG, "event:%s listener_count:%d", eve.event, eve.listener_count);
 
         cJSON_Delete(events);
 }
 
-void test_post_event() { post_event("event.test", NULL); }
+void test_post_event() { event::post_event("event.test", NULL); }
 
 void test_get_config()
 {
-        cJSON *config = get_config();
+        cJSON *config = esphalib::config::get_config();
         char *jsonstr = cJSON_Print(config);
         ESP_LOGI(TAG, "Config - %s", jsonstr);
         TEST_ASSERT_NOT_EQUAL_MESSAGE(0, cJSON_GetArraySize(config), "Config GET failed.");
@@ -149,7 +165,7 @@ void test_get_config()
 
 void test_get_states()
 {
-        cJSON *states = get_states();
+        cJSON *states = state::get_states();
         char *jsonstr = cJSON_Print(states);
         ESP_LOGI(TAG, "States - %s", jsonstr);
         TEST_ASSERT_NOT_EQUAL_MESSAGE(0, cJSON_GetArraySize(states), "States GET failed.");
@@ -161,7 +177,7 @@ void test_post_config()
 {
         // from good home_assistant config. if config is bad this test will fail and it's not necessarily the fault of
         // the library
-        TEST_ASSERT_TRUE(check_config());
+        TEST_ASSERT_TRUE(esphalib::config::check_config());
 }
 
 // Sets and checks to make sure the url and long lived access token are set before doing tests
@@ -171,20 +187,24 @@ void test_set_url_and_token()
         TEST_ASSERT_NOT_EQUAL_MESSAGE(strcmp(HA_URL, ""), 0, "HA_URL is not set.");
         TEST_ASSERT_NOT_EQUAL_MESSAGE(strcmp(LONG_LIVED_ACCESS_TOKEN, ""), 0, "LONG_LIVED_ACCESS_TOKEN is not set.");
 
-        set_ha_url(HA_URL);
-        set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
+        api::set_ha_url(HA_URL);
+        api::set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
 
-        TEST_ASSERT_EQUAL_STRING_MESSAGE(HA_URL, ha_url.c_str(), "HA_URL failed to be set.");
-        TEST_ASSERT_EQUAL_STRING_MESSAGE(LONG_LIVED_ACCESS_TOKEN, long_lived_access_token.c_str(),
+        TEST_ASSERT_EQUAL_STRING_MESSAGE(HA_URL, api::ha_url.c_str(), "HA_URL failed to be set.");
+        TEST_ASSERT_EQUAL_STRING_MESSAGE(LONG_LIVED_ACCESS_TOKEN, api::long_lived_access_token.c_str(),
                                          "long_lived_access_token failed to be set.");
 }
 
 int runUnityTests(void)
 {
         UNITY_BEGIN();
-        RUN_TEST(test_set_url_and_token);
-        RUN_TEST(test_add_entity_attribute);
+        // Non Wi-Fi dependent tests
         RUN_TEST(test_HAEntity_print);
+        RUN_TEST(test_add_entity_attribute);
+
+        // Wi-Fi dependent tests
+        wifi_init_sta();
+        RUN_TEST(test_set_url_and_token);
         RUN_TEST(test_api_running);
         RUN_TEST(test_entity_uploadreceive);
         RUN_TEST(test_print_real_HAEntity);
@@ -198,10 +218,8 @@ int runUnityTests(void)
 }
 
 extern "C" {
-void app_main(void)
-{
-        wifi_init_sta();
+void app_main(void) { runUnityTests(); }
+}
 
-        runUnityTests();
-}
-}
+} // namespace testapi
+} // namespace esphalib

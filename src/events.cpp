@@ -1,20 +1,23 @@
 #include "events.hpp"
-
-extern "C" {
+#include "api.hpp"
 #include "cJSON.h"
 #include "esp_log.h"
-}
-#include "api.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
 
-static constexpr const char *TAG = "Events";
-
-static std::string get_events_req(void)
+namespace esphalib
 {
-        std::string req = get_req(EVENTSPATH);
+namespace event
+{
+
+namespace
+{
+constexpr const char *TAG = "Events";
+std::string get_events_req(void)
+{
+        std::string req = api::get_req(api::EVENTSPATH);
 
         if (req.empty()) {
                 ESP_LOGE(TAG, "API events GET request failed");
@@ -22,11 +25,12 @@ static std::string get_events_req(void)
         return req;
 }
 
-static cJSON *parse_events_str(const std::string &eventsstr)
+cJSON *parse_events_str(const std::string &eventsstr)
 {
         cJSON *jsonreq = cJSON_Parse(eventsstr.c_str());
         return jsonreq;
 }
+} // namespace
 
 cJSON *get_events(void)
 {
@@ -65,12 +69,14 @@ void post_event(const char *event_type, cJSON *event_data)
         char *jsonstr = cJSON_Print(json_api_req);
         // ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
 
-        char path[sizeof(EVENTSPATH) + std::strlen(event_type) + 1 + 1]; // +1 for the / in the path
-        snprintf(path, sizeof(EVENTSPATH) + std::strlen(event_type) + 1 + 1, "%s/%s", EVENTSPATH, event_type);
+        char path[sizeof(api::EVENTSPATH) + std::strlen(event_type) + 1 + 1]; // +1 for the / in the path
+        snprintf(path, sizeof(api::EVENTSPATH) + std::strlen(event_type) + 1 + 1, "%s/%s", api::EVENTSPATH, event_type);
 
         // ESP_LOGI(TAG, "Path - %s", path);
 
-        post_req(path, jsonstr, false);
+        api::post_req(path, jsonstr, false);
         free(jsonstr);
         cJSON_Delete(json_api_req);
 }
+} // namespace event
+} // namespace esphalib

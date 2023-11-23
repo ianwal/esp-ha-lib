@@ -3,6 +3,7 @@
 #include "esp_http_client.h"
 #include "esp_log.h"
 #include <cstdlib>
+#include <document.h>
 #include <string>
 
 namespace esphalib
@@ -15,6 +16,8 @@ namespace
 {
 constexpr const char *TAG{"API"};
 }
+
+using namespace rapidjson;
 
 // Set with set_ha_url()
 std::string ha_url;
@@ -199,32 +202,24 @@ std::string get_req(const char *path)
 
 bool get_api_status(void)
 {
-        const std::string req = get_req("/api/");
+        auto const req = get_req("/api/");
         if (req.empty()) {
                 return false;
         }
 
-        cJSON *jsonreq = cJSON_Parse(req.c_str());
+        rapidjson::Document d;
+        d.Parse(req.c_str());
+        if (d.HasMember("message")) {
+                if (auto message_it = d.FindMember("message"); message_it != d.MemberEnd()) {
+                        auto const message = (*message_it).value.GetString();
+                        ESP_LOGE(TAG, "Status: %s", message);
 
-        if (cJSON_IsNull(jsonreq)) {
-                cJSON_Delete(jsonreq);
-                return false;
+                        constexpr const char *API_RUNNING_STR = "API running.";
+                        if (strcmp(message, API_RUNNING_STR) == 0) {
+                                return true;
+                        }
+                }
         }
-
-        cJSON *message = cJSON_GetObjectItem(jsonreq, "message");
-        if (cJSON_IsNull(message) || !cJSON_IsString(message)) {
-                cJSON_Delete(jsonreq);
-                return false;
-        }
-
-        ESP_LOGV(TAG, "Status: %s", cJSON_GetStringValue(message));
-
-        if (strncmp(cJSON_GetStringValue(message), "API running.", sizeof("API running.")) == 0) {
-                cJSON_Delete(jsonreq);
-                return true;
-        }
-
-        cJSON_Delete(jsonreq);
         return false;
 }
 

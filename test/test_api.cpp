@@ -20,6 +20,7 @@ extern "C" {
 
 #include "esp_ha_lib.hpp"
 #include "secrets.hpp"
+#include "wifisecrets.h"
 #include <stdlib.h>
 #include <string>
 #include <unity.h>
@@ -72,12 +73,16 @@ void test_entity_uploadreceive(void)
         delete newEntity;
 }
 
-void test_api_running(void)
+void test_wifi_credentials_filled(void)
 {
-        TEST_ASSERT_MESSAGE(is_wifi_connected(), "WiFi is not connected");
-
-        TEST_ASSERT_MESSAGE(api::get_api_status(), "API is not accessible and/or not running.");
+        TEST_ASSERT_NOT_EQUAL_MESSAGE(strcmp(NETWORK_SSID, ""), 0, "NETWORK_SSID is not set.");
+        TEST_ASSERT_NOT_EQUAL_MESSAGE(strcmp(NETWORK_PASSWORD, ""), 0, "NETWORK_PASSWORD is not set.");
 }
+
+// Just used for testing, does not test the library
+void test_wifi_connected(void) { TEST_ASSERT_MESSAGE(is_wifi_connected(), "WiFi is not connected"); }
+
+void test_api_running(void) { TEST_ASSERT_MESSAGE(api::get_api_status(), "API is not accessible and/or not running."); }
 
 void test_HAEntity_print(void)
 {
@@ -202,6 +207,10 @@ void test_set_url_and_token()
                                          "long_lived_access_token failed to be set.");
 }
 
+// Make sure Wi-Fi secrets are filled before running Wi-Fi dependent tests
+// Tests that follow will fail if they're not set
+void test_wifi_secrets_filled() {}
+
 int runUnityTests(void)
 {
         UNITY_BEGIN();
@@ -210,7 +219,9 @@ int runUnityTests(void)
         RUN_TEST(test_add_entity_attribute);
 
         // Wi-Fi dependent tests
+        RUN_TEST(test_wifi_credentials_filled);
         wifi_init_sta();
+        RUN_TEST(test_wifi_connected);
         RUN_TEST(test_set_url_and_token);
         RUN_TEST(test_api_running);
         RUN_TEST(test_entity_uploadreceive);

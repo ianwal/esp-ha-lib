@@ -207,10 +207,6 @@ void test_set_url_and_token()
                                          "long_lived_access_token failed to be set.");
 }
 
-// Make sure Wi-Fi secrets are filled before running Wi-Fi dependent tests
-// Tests that follow will fail if they're not set
-void test_wifi_secrets_filled() {}
-
 int runUnityTests(void)
 {
         UNITY_BEGIN();

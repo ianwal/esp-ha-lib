@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cJSON.h"
+#include <document.h>
 
 namespace esphalib
 {
@@ -8,7 +8,7 @@ namespace esphalib
 namespace config
 {
 
-cJSON *get_config(void);
+api::RequestResponse<rapidjson::Document> get_config(void);
 bool check_config(void);
 
 } // namespace config

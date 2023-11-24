@@ -50,7 +50,7 @@ void test_entity_uploadreceive(void)
         constexpr const char *entity_id = "sensor.esphalibtest";
         constexpr const char *friendly_entity_name = "esp ha lib test";
         constexpr const char *unit_of_measurement = "Test Units";
-        const float state = (esp_random() % 100);
+        auto const state = static_cast<float>(esp_random() % 100);
 
         HAEntity entity;
         entity.state = std::to_string(state);
@@ -85,7 +85,7 @@ void test_wifi_connected(void) { TEST_ASSERT_MESSAGE(is_wifi_connected(), "WiFi 
 void test_api_running(void)
 {
         auto const api_status = api::get_api_status();
-        auto const expected_status = api::APIStatus_type::ONLINE;
+        auto const expected_status = api::Status_type::ONLINE;
         TEST_ASSERT_TRUE_MESSAGE(api_status == expected_status, "API is not accessible and/or not running.");
 }
 
@@ -164,17 +164,17 @@ void test_get_event_from_events()
 
 void test_post_event() { event::post_event("event.test", NULL); }
 
+// Check if able to get a config from a known good Home Assistant instance
+// Note: Does not check if the config is good (nor does it matter for this test)
 void test_get_config()
 {
-        cJSON *config = esphalib::config::get_config();
-        auto jsonstr = cJSON_Print(config);
-        TEST_ASSERT_NOT_NULL_MESSAGE(jsonstr, "get_config() was NULL");
-        if (jsonstr != nullptr) {
-                ESP_LOGI(TAG, "Config - %s", jsonstr);
-        }
-        TEST_ASSERT_NOT_EQUAL_MESSAGE(0, cJSON_GetArraySize(config), "Config GET failed.");
-        free(jsonstr);
-        cJSON_Delete(config);
+        auto const config_response = esphalib::config::get_config();
+        auto const expected_status = api::RequestStatus_type::SUCCESS;
+        TEST_ASSERT(config_response.status == expected_status);
+
+        // Check that a known good object is in the response. In this case, that is version.
+        auto message_it = config_response.response.FindMember("version");
+        TEST_ASSERT(message_it != config_response.response.MemberEnd());
 }
 
 void test_get_states()

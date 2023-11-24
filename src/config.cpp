@@ -1,9 +1,9 @@
 #include "api.hpp"
-#include "cJSON.h"
 #include "esp_log.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <document.h>
 #include <string>
 
 namespace esphalib
@@ -18,32 +18,24 @@ constexpr const char *TAG = "Config";
 
 namespace api = esphalib::api;
 
-std::string get_config_req(void)
-{
-        std::string req = api::get_req(api::CONFIGPATH);
-
-        if (req.empty()) {
-                ESP_LOGE(TAG, "API GET request failed");
-        }
-        return req;
-}
-
-cJSON *parse_config_str(const std::string &configstr)
-{
-        cJSON *jsonreq = nullptr;
-        if (!configstr.empty()) {
-                jsonreq = cJSON_Parse(configstr.c_str());
-        }
-        return jsonreq;
-}
-
 } // namespace
 
-cJSON *get_config(void)
+using namespace rapidjson;
+
+// Returns success or failure and the parsed JSON for the config.
+api::RequestResponse<rapidjson::Document> get_config(void)
 {
-        const std::string configstr = get_config_req();
-        cJSON *config = parse_config_str(configstr);
-        return config;
+        auto const raw_req = api::get_req(api::CONFIGPATH);
+
+        Document json_req;
+        api::RequestResponse<rapidjson::Document> result;
+        auto status = api::RequestStatus_type::SUCCESS;
+        if (raw_req.status == api::RequestStatus_type::SUCCESS) {
+                json_req.Parse(raw_req.response);
+        } else {
+                status = api::RequestStatus_type::FAILURE;
+        }
+        return api::RequestResponse<rapidjson::Document>{status, std::move(json_req)};
 }
 
 // Returns true if the config is good

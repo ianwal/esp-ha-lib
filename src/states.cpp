@@ -16,17 +16,18 @@ namespace state
 namespace
 {
 constexpr const char *TAG = "States";
-static std::string get_states_req(void)
-{
-        std::string req{api::get_req(api::STATESPATH)};
 
-        if (req.empty()) {
+std::string get_states_req(void)
+{
+        auto req = api::get_req(api::STATESPATH);
+
+        if (req.response.empty() || req.status != api::RequestStatus_type::SUCCESS) {
                 ESP_LOGE(TAG, "API states GET request failed");
         }
-        return req;
+        return req.response;
 }
 
-static cJSON *parse_states_str(const std::string &states_str)
+cJSON *parse_states_str(const std::string &states_str)
 {
         cJSON *jsonreq = nullptr;
         if (!states_str.empty()) {
@@ -55,12 +56,12 @@ void add_entity_attribute(const char *key, const char *value, HAEntity *entity)
 std::string HAEntity::get_entity_req(const std::string &entity_name)
 {
         const std::string path{std::string{api::STATESPATH} + "/" + entity_name};
-        std::string req{api::get_req(path.c_str())};
+        auto req = api::get_req(path.c_str());
 
-        if (req.empty()) {
+        if (req.response.empty() || req.status != api::RequestStatus_type::SUCCESS) {
                 ESP_LOGE(TAG, "API entity GET request failed");
         }
-        return req;
+        return req.response;
 }
 
 // Parses the entity str using cJSON

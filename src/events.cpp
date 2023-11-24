@@ -17,12 +17,12 @@ namespace
 constexpr const char *TAG = "Events";
 std::string get_events_req(void)
 {
-        std::string req = api::get_req(api::EVENTSPATH);
+        auto req = api::get_req(api::EVENTSPATH);
 
-        if (req.empty()) {
+        if (req.response.empty() || req.status != api::RequestStatus_type::SUCCESS) {
                 ESP_LOGE(TAG, "API events GET request failed");
         }
-        return req;
+        return req.response;
 }
 
 cJSON *parse_events_str(const std::string &eventsstr)

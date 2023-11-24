@@ -37,6 +37,11 @@ cJSON *parse_events_str(const std::string &eventsstr)
 
 cJSON *get_events(void)
 {
+        auto req = api::get_req(api::EVENTSPATH);
+
+        if (req.response.empty() || req.status != api::RequestStatus_type::SUCCESS) {
+                ESP_LOGE(TAG, "API events GET request failed");
+        }
         const std::string eventsstr = get_events_req();
         cJSON *events = parse_events_str(eventsstr);
         return events;
@@ -52,10 +57,22 @@ HAEvent get_event_from_events(const char *event_type, cJSON *events)
                 cJSON *item = cJSON_GetArrayItem(events, i);
                 char *itemstring = cJSON_GetStringValue(cJSON_GetObjectItem(item, "event"));
                 // Check if event_type matches the event name
-                if (strcmp(itemstring, event_type) == 0) {
-                        strcpy(event.event, itemstring);
+                if (itemstring != nullptr && std::strcmp(itemstring, event_type) == 0) {
+                        // Copy itemstring into event.event
+                        for (size_t i = 0; auto &e : event.event) {
+                                auto const isi = itemstring[i];
+                                e = isi;
+                                if (isi == '\0') {
+                                        break;
+                                }
+                                ++i;
+                        }
+                        // ensure null-terminated if itemstring is longer than event.event,
+                        // but this should really not happen
+                        event.event.back() = '\0';
+
                         event.listener_count =
-                            (unsigned int)cJSON_GetNumberValue(cJSON_GetObjectItem(item, "listener_count"));
+                            static_cast<int32_t>(cJSON_GetNumberValue(cJSON_GetObjectItem(item, "listener_count")));
                         break;
                 }
         }

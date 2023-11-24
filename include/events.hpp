@@ -2,17 +2,25 @@
 
 #include "cJSON.h"
 
+#include <array>
+#include <cstdint>
+
 namespace esphalib
 {
 
 namespace event
 {
 
+namespace
+{
+constexpr size_t MAX_EVENT_NAME_SIZE{256U};
+} // namespace
+
 class HAEvent
 {
       public:
-        char event[256]; // this should be large enough for any event name
-        unsigned int listener_count;
+        std::array<char, MAX_EVENT_NAME_SIZE> event{'\0'}; // 256 should be large enough for any event name
+        int32_t listener_count;
 };
 
 cJSON *get_events(void);

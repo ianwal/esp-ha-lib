@@ -143,7 +143,7 @@ void test_get_events()
 
         constexpr const char *ha_start_event_name = "homeassistant_start";
         auto eve = event::get_event_from_events(ha_start_event_name, events);
-        ESP_LOGI(TAG, "event:%s listener_count:%d", eve.event, eve.listener_count);
+        ESP_LOGI(TAG, "event:%s listener_count:%li", eve.event.data(), eve.listener_count);
 
         free(jsonstr);
 
@@ -155,9 +155,9 @@ void test_get_event_from_events()
         cJSON *events = event::get_events();
 
         auto eve = event::get_event_from_events("homeassistant_start", events);
-        TEST_ASSERT_EQUAL_STRING("homeassistant_start", eve.event);
+        TEST_ASSERT_EQUAL_STRING("homeassistant_start", eve.event.data());
 
-        ESP_LOGI(TAG, "event:%s listener_count:%d", eve.event, eve.listener_count);
+        ESP_LOGI(TAG, "event:%s listener_count:%li", eve.event.data(), eve.listener_count);
 
         cJSON_Delete(events);
 }

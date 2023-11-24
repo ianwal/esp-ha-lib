@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
-
 #define RAPIDJSON_HAS_STDSTRING 1
+#include <document.h>
+#include <string>
 
 namespace esphalib
 {
@@ -33,6 +33,26 @@ template <class T> struct RequestResponse {
 RequestResponse<std::string> get_req(const char *path);
 std::string post_req(const char *path, const char *data, const bool return_response);
 Status_type get_api_status(void);
+
+namespace internal
+{
+using namespace rapidjson;
+// Returns status and the parsed JSON for a given path
+inline RequestResponse<rapidjson::Document> get_parsed_request(const char *path)
+{
+        auto const raw_req = api::get_req(path);
+
+        Document json_req;
+        api::RequestResponse<rapidjson::Document> result;
+        auto status = api::RequestStatus_type::SUCCESS;
+        if (raw_req.status == api::RequestStatus_type::SUCCESS) {
+                json_req.Parse(raw_req.response);
+        } else {
+                status = api::RequestStatus_type::FAILURE;
+        }
+        return api::RequestResponse<rapidjson::Document>{status, std::move(json_req)};
+}
+} // namespace internal
 
 } // namespace api
 } // namespace esphalib

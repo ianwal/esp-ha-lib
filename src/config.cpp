@@ -25,17 +25,7 @@ using namespace rapidjson;
 // Returns success or failure and the parsed JSON for the config.
 api::RequestResponse<rapidjson::Document> get_config(void)
 {
-        auto const raw_req = api::get_req(api::CONFIGPATH);
-
-        Document json_req;
-        api::RequestResponse<rapidjson::Document> result;
-        auto status = api::RequestStatus_type::SUCCESS;
-        if (raw_req.status == api::RequestStatus_type::SUCCESS) {
-                json_req.Parse(raw_req.response);
-        } else {
-                status = api::RequestStatus_type::FAILURE;
-        }
-        return api::RequestResponse<rapidjson::Document>{status, std::move(json_req)};
+        return api::internal::get_parsed_request(api::CONFIGPATH);
 }
 
 // Returns true if the config is good

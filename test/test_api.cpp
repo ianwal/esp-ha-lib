@@ -37,6 +37,7 @@ constexpr const char *TAG = "test_api";
 }
 
 namespace api = esphalib::api;
+namespace config = esphalib::config;
 namespace event = esphalib::event;
 namespace state = esphalib::state;
 
@@ -50,7 +51,7 @@ void test_entity_uploadreceive(void)
         constexpr const char *entity_id = "sensor.esphalibtest";
         constexpr const char *friendly_entity_name = "esp ha lib test";
         constexpr const char *unit_of_measurement = "Test Units";
-        auto const state = static_cast<float>(esp_random() % 100);
+        auto const state = static_cast<float>(esp_random() % 100) + ((static_cast<float>(esp_random() % 100) / 100.0f));
 
         HAEntity entity;
         entity.state = std::to_string(state);
@@ -157,6 +158,7 @@ void test_get_event_from_events()
         TEST_ASSERT(not_found_event.listener_count == expected_not_found_listener_count);
 }
 
+// TODO: make this actually useful other than testing for crashes
 void test_post_event() { event::post_event("event.test", NULL); }
 
 // Check if able to get a config from a known good Home Assistant instance
@@ -189,7 +191,7 @@ void test_post_config()
 {
         // from good home_assistant config. if config is bad this test will fail and it's not necessarily the fault of
         // the library
-        TEST_ASSERT_TRUE(esphalib::config::check_config());
+        TEST_ASSERT_TRUE(config::check_config());
 }
 
 // Sets and checks to make sure the url and long lived access token are set before doing tests
@@ -202,8 +204,8 @@ void test_set_url_and_token()
         api::set_ha_url(HA_URL);
         api::set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
 
-        TEST_ASSERT_EQUAL_STRING_MESSAGE(HA_URL, api::ha_url.c_str(), "HA_URL failed to be set.");
-        TEST_ASSERT_EQUAL_STRING_MESSAGE(LONG_LIVED_ACCESS_TOKEN, api::long_lived_access_token.c_str(),
+        TEST_ASSERT_EQUAL_STRING_MESSAGE(HA_URL, api::get_ha_url().c_str(), "HA_URL failed to be set.");
+        TEST_ASSERT_EQUAL_STRING_MESSAGE(LONG_LIVED_ACCESS_TOKEN, api::get_long_lived_access_token().c_str(),
                                          "long_lived_access_token failed to be set.");
 }
 

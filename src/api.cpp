@@ -15,61 +15,30 @@ namespace api
 namespace
 {
 constexpr const char *TAG{"API"};
+int timeout_ms = 10000;
 }
 
 using namespace rapidjson;
 
-// Set with set_ha_url()
-std::string ha_url;
-// Set with set_long_lived_access_token()
-std::string long_lived_access_token;
-
-// Call this before doing anything with the library
-// Sets ha url e.g. "http://IP_ADDRESS:8123"
-void set_ha_url(const char *new_url)
+std::string post_req(std::string_view path, std::string_view data, const bool return_response)
 {
-        if (!new_url || strncmp(new_url, "", 1) == 0) {
-                ESP_LOGE(TAG, "Failed to set ha_url. new_url is NULL.");
-                return;
-        }
-
-        ha_url = std::string{new_url};
-
-        ESP_LOGV(TAG, "Set new ha_url to: %s", ha_url.c_str());
-}
-
-// Call this before doing anything with the library
-void set_long_lived_access_token(const char *new_long_lived_access_token)
-{
-        if (!new_long_lived_access_token || strncmp(new_long_lived_access_token, "", 1) == 0) {
-                ESP_LOGE(TAG, "Failed to set long_lived_access_token. new_long_lived_access_token is NULL.");
-                return;
-        }
-
-        long_lived_access_token = std::string{new_long_lived_access_token};
-
-        ESP_LOGV(TAG, "Set new LLAT to: %s", long_lived_access_token.c_str());
-}
-
-std::string post_req(const char *path, const char *data, const bool return_response)
-{
-        if (ha_url.empty() || long_lived_access_token.empty()) {
+        if (get_ha_url().empty() || get_long_lived_access_token().empty()) {
                 ESP_LOGE(TAG, "Failed to upload data: ha_url or access token not set yet");
                 return std::string{};
         }
 
         // Create API URL. Will look something like http://HA_URL/api/states/entity.entity_NAME
-        const std::string api_URL{ha_url + path};
+        const std::string api_URL{get_ha_url() + std::string{path}};
 
         constexpr const char *bearer = "Bearer ";
-        const std::string auth_data{bearer + long_lived_access_token};
+        const std::string auth_data{bearer + get_long_lived_access_token()};
 
 // Attempt to make API request to Home Assistant
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
         esp_http_client_config_t home_assistant_config = {
             .url = api_URL.c_str(),
             .method = HTTP_METHOD_POST,
-            .timeout_ms = 10000,
+            .timeout_ms = timeout_ms,
             .disable_auto_redirect = false,
             .is_async = false,
             .skip_cert_common_name_check = true,
@@ -81,15 +50,16 @@ std::string post_req(const char *path, const char *data, const bool return_respo
         esp_http_client_set_header(client, "Authorization", auth_data.c_str());
         esp_http_client_set_header(client, "Content-Type", "application/json");
 
-        if (data) {
-                esp_http_client_set_post_field(client, data, strlen(data));
+        // Set POST field if data is available
+        if (data.size() > 0) {
+                esp_http_client_set_post_field(client, data.data(), data.size());
         }
 
         //  POST data
         esp_err_t err = esp_http_client_perform(client);
         if (err == ESP_OK) {
-                if (data) {
-                        ESP_LOGV(TAG, "Sent %s to %s", data, api_URL.c_str());
+                if (data.size() > 0) {
+                        ESP_LOGV(TAG, "Sent %s to %s", data.data(), api_URL.c_str());
                 }
         } else {
                 ESP_LOGE(TAG, "Could not send upload entity data.");
@@ -104,10 +74,9 @@ std::string post_req(const char *path, const char *data, const bool return_respo
                         if (err == ESP_OK) {
                                 esp_http_client_fetch_headers(client);
                                 if (return_response) {
-                                        int64_t content_length = esp_http_client_get_content_length(client);
-                                        char *response_buffer = nullptr;
-                                        response_buffer = (char *)malloc(content_length + 1);
-                                        if (response_buffer) {
+                                        auto const content_length = esp_http_client_get_content_length(client);
+                                        auto response_buffer = new char[content_length + 1];
+                                        if (response_buffer != nullptr) {
                                                 esp_err_t post_response = esp_http_client_read_response(
                                                     client, response_buffer, content_length);
                                                 if (post_response != ESP_FAIL) {
@@ -120,7 +89,7 @@ std::string post_req(const char *path, const char *data, const bool return_respo
                                                         ESP_LOGE(TAG, "POST Response failed %s",
                                                                  esp_err_to_name(post_response));
                                                 }
-                                                free(response_buffer);
+                                                delete[] response_buffer;
                                         }
                                 }
                         } else {
@@ -135,9 +104,9 @@ std::string post_req(const char *path, const char *data, const bool return_respo
         return ret_str;
 }
 
-RequestResponse<std::string> get_req(const char *path)
+RequestResponse<std::string> get_req(std::string_view path)
 {
-        if (ha_url.empty() || long_lived_access_token.empty()) {
+        if (get_ha_url().empty() || get_long_lived_access_token().empty()) {
                 ESP_LOGE(TAG, "Failed to GET: ha_url or access token not set yet");
                 return {RequestStatus_type::FAILURE, std::string{}};
         }
@@ -145,16 +114,16 @@ RequestResponse<std::string> get_req(const char *path)
         char *local_response_buffer = nullptr;
 
         // Create API URL. Will look something like http://HA_URL/api/states/entity.entity_NAME
-        const std::string api_URL{ha_url + path};
+        const std::string api_URL{get_ha_url() + std::string{path}};
 
         constexpr const char *bearer = "Bearer ";
-        const std::string auth_data{bearer + long_lived_access_token};
+        const std::string auth_data{bearer + get_long_lived_access_token()};
 
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
         esp_http_client_config_t config = {
             .url = api_URL.c_str(),
             .method = HTTP_METHOD_GET,
-            .timeout_ms = 10000,
+            .timeout_ms = timeout_ms,
             .disable_auto_redirect = false,
             .user_data = local_response_buffer,
             .is_async = false,
@@ -208,7 +177,7 @@ RequestResponse<std::string> get_req(const char *path)
 // just states if the API is running or not.
 Status_type get_api_status(void)
 {
-        auto const req = get_req("/api/");
+        auto const req = get_req(STATUSPATH);
 
         auto status = Status_type::OFFLINE;
         if (req.response.empty() || req.status != api::RequestStatus_type::SUCCESS) {

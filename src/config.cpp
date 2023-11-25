@@ -32,7 +32,7 @@ api::RequestResponse<rapidjson::Document> get_config(void)
 bool check_config(void)
 {
         constexpr const char *ok_response = "{\"result\":\"valid\",\"errors\":null}";
-        const std::string response = api::post_req(api::CHECKCONFIGPATH, nullptr, true);
+        auto const response = api::post_req(api::CHECKCONFIGPATH, "", true);
 
         bool result;
         if (!response.empty() && response.compare(ok_response) == 0) {

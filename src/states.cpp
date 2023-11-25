@@ -161,7 +161,7 @@ void HAEntity::post()
         const std::string path{std::string{api::STATESPATH} + "/" + entity_id};
 
         cJSON_Delete(json_api_req);
-        api::post_req(path.c_str(), jsonstr, false);
+        api::post_req(path, jsonstr, false);
         free(jsonstr);
 }
 

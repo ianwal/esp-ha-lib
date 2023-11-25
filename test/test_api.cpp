@@ -74,10 +74,12 @@ void test_entity_uploadreceive(void)
         delete newEntity;
 }
 
-void test_wifi_credentials_filled(void)
+// Make sure Wi-Fi credentials are at least available before testing Wi-Fi
+// This does not necessarily mean they are set
+void assert_wifi_credentials(void)
 {
-        TEST_ASSERT_NOT_EQUAL_MESSAGE(strcmp(NETWORK_SSID, ""), 0, "NETWORK_SSID is not set.");
-        TEST_ASSERT_NOT_EQUAL_MESSAGE(strcmp(NETWORK_PASSWORD, ""), 0, "NETWORK_PASSWORD is not set.");
+        static_assert(std::string{NETWORK_SSID}.size() > 0, "NETWORK_SSID is not defined.");
+        static_assert(std::string{NETWORK_PASSWORD}.size() > 0, "NETWORK_PASSWORD is not defined.");
 }
 
 // Just used for testing, does not test the library
@@ -198,12 +200,15 @@ void test_post_config()
 // Tests that follow will fail if they're not set which is good, but it's annoying to debug.
 void test_set_url_and_token()
 {
-        TEST_ASSERT_NOT_EQUAL_MESSAGE(strcmp(HA_URL, ""), 0, "HA_URL is not set.");
-        TEST_ASSERT_NOT_EQUAL_MESSAGE(strcmp(LONG_LIVED_ACCESS_TOKEN, ""), 0, "LONG_LIVED_ACCESS_TOKEN is not set.");
+        // Ensure they are not set before the setters are used.
+        TEST_ASSERT_NOT_EQUAL_MESSAGE(0, std::string{HA_URL}.size(), "HA_URL is not set.");
+        TEST_ASSERT_NOT_EQUAL_MESSAGE(0, std::string{LONG_LIVED_ACCESS_TOKEN}.size(),
+                                      "LONG_LIVED_ACCESS_TOKEN is not set.");
 
         api::set_ha_url(HA_URL);
         api::set_long_lived_access_token(LONG_LIVED_ACCESS_TOKEN);
 
+        // Then HA_URL and LONG_LIVED_ACCESS_TOKEN equal the strings they are set from
         TEST_ASSERT_EQUAL_STRING_MESSAGE(HA_URL, api::get_ha_url().c_str(), "HA_URL failed to be set.");
         TEST_ASSERT_EQUAL_STRING_MESSAGE(LONG_LIVED_ACCESS_TOKEN, api::get_long_lived_access_token().c_str(),
                                          "long_lived_access_token failed to be set.");
@@ -217,7 +222,7 @@ int runUnityTests(void)
         RUN_TEST(test_add_entity_attribute);
 
         // Wi-Fi dependent tests
-        RUN_TEST(test_wifi_credentials_filled);
+        void assert_wifi_credentials(void);
         wifi_init_sta();
         RUN_TEST(test_wifi_connected);
         RUN_TEST(test_set_url_and_token);

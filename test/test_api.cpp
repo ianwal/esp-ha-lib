@@ -131,35 +131,30 @@ void test_add_entity_attribute(void)
 
 void test_get_events()
 {
-        cJSON *events = event::get_events();
-        TEST_ASSERT_NOT_NULL_MESSAGE(events, "get_events() was NULL");
-
-        char *jsonstr = cJSON_Print(events);
-
-        // if jsonstr is null, means either get_events failed or somehow the json was parsed wrong
-        TEST_ASSERT_NOT_NULL_MESSAGE(jsonstr, "get_events() was NULL");
-
-        ESP_LOGI(TAG, "Events - %s", jsonstr);
-
-        constexpr const char *ha_start_event_name = "homeassistant_start";
-        auto eve = event::get_event_from_events(ha_start_event_name, events);
-        ESP_LOGI(TAG, "event:%s listener_count:%li", eve.event.data(), eve.listener_count);
-
-        free(jsonstr);
-
-        cJSON_Delete(events);
+        auto const events_response = event::get_events();
+        auto const expected_status = api::RequestStatus_type::SUCCESS;
+        TEST_ASSERT(events_response.status == expected_status);
 }
 
 void test_get_event_from_events()
 {
-        cJSON *events = event::get_events();
+        // Given events from Home Assistant
+        auto const events_response = event::get_events();
+        auto const expected_status = api::RequestStatus_type::SUCCESS;
+        TEST_ASSERT(events_response.status == expected_status);
 
-        auto eve = event::get_event_from_events("homeassistant_start", events);
-        TEST_ASSERT_EQUAL_STRING("homeassistant_start", eve.event.data());
+        // Then, a known event in Home Assistant is found.
+        auto const found_event = event::get_event_from_events("homeassistant_start", events_response.response);
+        TEST_ASSERT_EQUAL_STRING("homeassistant_start", found_event.event.data());
 
-        ESP_LOGI(TAG, "event:%s listener_count:%li", eve.event.data(), eve.listener_count);
+        ESP_LOGI(TAG, "event:%s listener_count:%li", found_event.event.data(), found_event.listener_count);
 
-        cJSON_Delete(events);
+        // Then, an event that is not in Home Assistant is not found.
+        auto const not_found_event =
+            event::get_event_from_events("this_event_should_not_exist", events_response.response);
+        TEST_ASSERT_EQUAL_STRING("", not_found_event.event.data());
+        size_t const expected_not_found_listener_count{0U};
+        TEST_ASSERT(not_found_event.listener_count == expected_not_found_listener_count);
 }
 
 void test_post_event() { event::post_event("event.test", NULL); }

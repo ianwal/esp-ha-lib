@@ -15,65 +15,43 @@ namespace event
 namespace
 {
 constexpr const char *TAG = "Events";
-std::string get_events_req(void)
-{
-        auto req = api::get_req(api::EVENTSPATH);
-
-        if (req.response.empty() || req.status != api::RequestStatus_type::SUCCESS) {
-                ESP_LOGE(TAG, "API events GET request failed");
-        }
-        return req.response;
-}
-
-cJSON *parse_events_str(const std::string &eventsstr)
-{
-        cJSON *jsonreq = nullptr;
-        if (!eventsstr.empty()) {
-                jsonreq = cJSON_Parse(eventsstr.c_str());
-        }
-        return jsonreq;
-}
 } // namespace
 
-cJSON *get_events(void)
+api::RequestResponse<rapidjson::Document> get_events(void)
 {
-        auto req = api::get_req(api::EVENTSPATH);
-
-        if (req.response.empty() || req.status != api::RequestStatus_type::SUCCESS) {
-                ESP_LOGE(TAG, "API events GET request failed");
-        }
-        const std::string eventsstr = get_events_req();
-        cJSON *events = parse_events_str(eventsstr);
-        return events;
+        return api::internal::get_parsed_request(api::EVENTSPATH);
 }
 
-// Get single event by name from a cJSON array of events
-HAEvent get_event_from_events(const char *event_type, cJSON *events)
+HAEvent get_event_from_events(std::string_view event_type, rapidjson::Document const &events_json)
 {
-        // TODO: Add safety checks for cJSON object (isarray, etc.)
-        // Should the event.event be set to something like "Not Found" as the default case?
-        HAEvent event = {.event = "", .listener_count = 0};
-        for (int i = 0; i < cJSON_GetArraySize(events); i++) {
-                cJSON *item = cJSON_GetArrayItem(events, i);
-                char *itemstring = cJSON_GetStringValue(cJSON_GetObjectItem(item, "event"));
-                // Check if event_type matches the event name
-                if (itemstring != nullptr && std::strcmp(itemstring, event_type) == 0) {
-                        // Copy itemstring into event.event
-                        for (size_t i = 0; auto &e : event.event) {
-                                auto const isi = itemstring[i];
-                                e = isi;
-                                if (isi == '\0') {
-                                        break;
-                                }
-                                ++i;
-                        }
-                        // ensure null-terminated if itemstring is longer than event.event,
-                        // but this should really not happen
-                        event.event.back() = '\0';
+        HAEvent event;
 
-                        event.listener_count =
-                            static_cast<int32_t>(cJSON_GetNumberValue(cJSON_GetObjectItem(item, "listener_count")));
-                        break;
+        for (auto &event_entry : events_json.GetArray()) {
+                if (auto event_name_it = event_entry.FindMember("event"); event_name_it != event_entry.MemberEnd()) {
+                        auto const event_name = (*event_name_it).value.GetString();
+                        // if we find the event name we're searching for
+                        if (event_type.compare(event_name) == 0) {
+                                // Copy event name into event.event
+                                for (size_t i = 0; auto &e : event.event) {
+                                        auto const isi = event_name[i];
+                                        e = isi;
+                                        if (isi == '\0') {
+                                                break;
+                                        }
+                                        ++i;
+                                }
+                                // ensure null-terminated even if itemstring is longer than event.event,
+                                // but that should really not happen
+                                event.event.back() = '\0';
+
+                                // Get listener count
+                                if (auto listener_count_it = event_entry.FindMember("listener_count");
+                                    listener_count_it != event_entry.MemberEnd()) {
+                                        auto const listener_count = (*listener_count_it).value.GetInt();
+                                        event.listener_count = listener_count;
+                                }
+                                break;
+                        }
                 }
         }
 

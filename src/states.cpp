@@ -15,9 +15,10 @@ namespace state
 
 namespace
 {
-constexpr const char *TAG = "States";
 
-std::string get_states_req(void)
+constexpr auto TAG = "States";
+
+std::string get_states_req()
 {
         auto req = api::get_req(api::STATESPATH);
 
@@ -35,6 +36,7 @@ cJSON *parse_states_str(const std::string &states_str)
         }
         return jsonreq;
 }
+
 } // namespace
 
 // ex. unit_of_measurement, friendly_name
@@ -137,7 +139,7 @@ HAEntity *HAEntity::get(const std::string &entity_name)
 
 // Get cJSON of all the states from Home Assistant
 // Note: States might be really big. Mine is around 2400 char on a small install.
-cJSON *get_states(void)
+cJSON *get_states()
 {
         const std::string states_str = get_states_req();
         cJSON *states = parse_states_str(states_str);

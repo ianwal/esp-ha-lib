@@ -10,7 +10,7 @@ namespace config
 {
 
 api::RequestResponse<rapidjson::Document> get_config(void);
-bool check_config(void);
+api::Config_Status_type check_config(void);
 
 } // namespace config
 } // namespace esphalib

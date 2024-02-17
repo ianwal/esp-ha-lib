@@ -30,7 +30,9 @@ api::RequestResponse<rapidjson::Document> get_events(void);
 // Returns an event with an empty name if it is not found
 HAEvent get_event_from_events(std::string_view event_type, rapidjson::Document const &events);
 
-void post_event(const char *event_type, cJSON *event_data);
+api::RequestResponse<rapidjson::Document> post_event(std::string_view event_type,
+                                                     rapidjson::Document const &event_data);
+api::RequestResponse<rapidjson::Document> post_event(std::string_view event_type);
 
 } // namespace event
 } // namespace esphalib

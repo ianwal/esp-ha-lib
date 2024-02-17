@@ -5,7 +5,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <document.h>
 #include <string>
+#include <stringbuffer.h>
+#include <writer.h>
 
 namespace esphalib
 {
@@ -17,7 +20,11 @@ namespace
 constexpr const char *TAG = "Events";
 } // namespace
 
-api::RequestResponse<rapidjson::Document> get_events(void)
+using RequestStatus_type = api::RequestStatus_type;
+using Document = rapidjson::Document;
+using api::RequestResponse;
+
+RequestResponse<rapidjson::Document> get_events(void)
 {
         return api::internal::get_parsed_request(api::EVENTSPATH);
 }
@@ -59,22 +66,43 @@ HAEvent get_event_from_events(std::string_view event_type, rapidjson::Document c
 }
 
 // Create API request to home assistant with events data
-// Fires an event with event_type. You can pass an optional JSON object to be used as event_data
-void post_event(const char *event_type, cJSON *event_data)
+// Fires an event with event_type. You can pass a JSON object to be used as event_data.
+RequestResponse<rapidjson::Document> post_event(std::string_view event_type, rapidjson::Document const &event_data)
 {
-        cJSON *json_api_req = event_data ? cJSON_Duplicate(event_data, true) : cJSON_CreateObject();
-
-        char *jsonstr = cJSON_Print(json_api_req);
         // ESP_LOGI(TAG, "JSON Str - %s", jsonstr);
 
-        char path[sizeof(api::EVENTSPATH) + std::strlen(event_type) + 1 + 1]; // +1 for the / in the path
-        snprintf(path, sizeof(api::EVENTSPATH) + std::strlen(event_type) + 1 + 1, "%s/%s", api::EVENTSPATH, event_type);
+        // char path[std::strlen(api::EVENTSPATH) + event_type.size() + 1 + 1]; // +1 for the / in the path
+        // snprintf(path, std::strlen(api::EVENTSPATH) + event_type.size() + 1 + 1, "%s/%s", api::EVENTSPATH,
+        // event_type);
+        auto const path = std::string{api::EVENTSPATH} + "/" + std::string{event_type};
 
-        // ESP_LOGI(TAG, "Path - %s", path);
-
-        api::post_req(path, jsonstr, false);
-        free(jsonstr);
-        cJSON_Delete(json_api_req);
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        event_data.Accept(writer);
+        auto const response = api::post_req(path, buffer.GetString(), true);
+        Document response_json;
+        if (response.status == RequestStatus_type::SUCCESS && response.response.size() != 0) {
+                response_json.Parse(response.response);
+                if (!response_json.HasParseError()) {
+                        return {response.status, std::move(response_json)};
+                }
+        }
+        return {response.status, {}};
+        // return {response.status, std::move(response_json)};
 }
+
+// Create API request to Home Assistant and fires an event with event_type.
+RequestResponse<rapidjson::Document> post_event(std::string_view event_type)
+{
+        auto const path = std::string{api::EVENTSPATH} + "/" + std::string{event_type};
+        auto const response = api::post_req(path, "", false);
+        Document response_json;
+        if (response.status == RequestStatus_type::SUCCESS) {
+                response_json.Parse(response.response);
+        }
+        // Required to move response_json because rapidjson::GenericDocument has deleted copy constructor.
+        return {response.status, std::move(response_json)}; 
+}
+
 } // namespace event
 } // namespace esphalib

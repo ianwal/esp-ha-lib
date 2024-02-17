@@ -21,6 +21,8 @@ namespace api = esphalib::api;
 } // namespace
 
 using namespace rapidjson;
+using RequestStatus_type = api::RequestStatus_type;
+using Config_Status_type = api::Config_Status_type;
 
 // Returns success or failure and the parsed JSON for the config.
 api::RequestResponse<rapidjson::Document> get_config(void)
@@ -28,18 +30,23 @@ api::RequestResponse<rapidjson::Document> get_config(void)
         return api::internal::get_parsed_request(api::CONFIGPATH);
 }
 
-// Returns true if the config is good
-bool check_config(void)
+// Get the config status
+Config_Status_type check_config(void)
 {
-        constexpr const char *ok_response = "{\"result\":\"valid\",\"errors\":null}";
+        // TODO: Print error from "result" if config is invalid
+        constexpr auto valid_response = "{\"result\":\"valid\",\"errors\":null}";
         auto const response = api::post_req(api::CHECKCONFIGPATH, "", true);
 
-        bool result;
-        if (!response.empty() && response.compare(ok_response) == 0) {
-                ESP_LOGV(TAG, "%s", response.c_str());
-                result = true;
+        Config_Status_type result;
+        if (response.status == RequestStatus_type::SUCCESS) {
+                if (!response.response.empty() && response.response.compare(valid_response) == 0) {
+                        result = Config_Status_type::VALID;
+                } else {
+                        // TODO: Compare to invalid response
+                        result = Config_Status_type::INVALID;
+                }
         } else {
-                result = false;
+                result = Config_Status_type::UNKNOWN;
         }
 
         return result;

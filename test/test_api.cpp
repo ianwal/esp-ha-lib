@@ -82,7 +82,7 @@ void test_HAEntity_print(void)
         HAEntity entity{
             .entity_id = "print_test1",
             .state = "on!",
-            .attributes = cJSON_Parse("{\"unit_of_measurement\":\"Test Units\",\"friendly_name\":\"esp ha libtest\"}"),
+            .attributes = cJSON_Parse(R"({"unit_of_measurement":"Test Units","friendly_name":"esp ha libtest"})"),
             .last_changed = const_cast<char *>("2023-05-17T10:41:28.855123+00:00"),
             .last_updated = const_cast<char *>("2021-02-12T10:41:28.422190+00:00")};
         entity.print();
@@ -150,7 +150,7 @@ void test_post_event()
 {
         // event::post_event("event.test");
         rapidjson::Document d;
-        d.Parse("{\"next_rising\":\"2016-05-31T03:39:14+00:00\"}");
+        d.Parse(R"({"next_rising":"2016-05-31T03:39:14+00:00"})");
 
         auto response = event::post_event("event.test", d);
         /*

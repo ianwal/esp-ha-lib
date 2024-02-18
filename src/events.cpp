@@ -1,23 +1,21 @@
 #include "events.hpp"
 #include "api.hpp"
 #include "cJSON.h"
+#include "common.hpp"
 #include "esp_log.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <document.h>
 #include <string>
 #include <stringbuffer.h>
 #include <writer.h>
 
-namespace esphalib
-{
-namespace event
+namespace esphalib::event
 {
 
 namespace
 {
-constexpr const char *TAG = "Events";
+constexpr auto TAG = "Events";
 } // namespace
 
 using RequestStatus_type = api::RequestStatus_type;
@@ -26,7 +24,7 @@ using api::RequestResponse;
 
 RequestResponse<rapidjson::Document> get_events(void)
 {
-        return api::internal::get_parsed_request(api::EVENTSPATH);
+        return esphalib::internal::get_parsed_request(api::EVENTSPATH);
 }
 
 HAEvent get_event_from_events(std::string_view event_type, rapidjson::Document const &events_json)
@@ -101,8 +99,7 @@ RequestResponse<rapidjson::Document> post_event(std::string_view event_type)
                 response_json.Parse(response.response);
         }
         // Required to move response_json because rapidjson::GenericDocument has deleted copy constructor.
-        return {response.status, std::move(response_json)}; 
+        return {response.status, std::move(response_json)};
 }
 
-} // namespace event
-} // namespace esphalib
+} // namespace esphalib::event

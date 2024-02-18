@@ -5,6 +5,8 @@
 #include "api.hpp"
 #include <array>
 #include <cstdint>
+
+#define RAPIDJSON_HAS_STDSTRING 1
 #include <document.h>
 
 namespace esphalib

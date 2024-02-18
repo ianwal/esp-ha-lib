@@ -1,6 +1,8 @@
 #pragma once
 
 #include "api.hpp"
+
+#define RAPIDJSON_HAS_STDSTRING 1
 #include <document.h>
 
 namespace esphalib

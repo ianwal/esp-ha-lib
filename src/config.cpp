@@ -1,33 +1,26 @@
 #include "api.hpp"
+#include "common.hpp"
 #include "esp_log.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <document.h>
 #include <string>
 
-namespace esphalib
-{
-
-namespace config
+namespace esphalib::config
 {
 
 namespace
 {
-constexpr const char *TAG = "Config";
-
-namespace api = esphalib::api;
-
+constexpr auto TAG = "Config";
 } // namespace
 
-using namespace rapidjson;
 using RequestStatus_type = api::RequestStatus_type;
 using Config_Status_type = api::Config_Status_type;
 
 // Returns success or failure and the parsed JSON for the config.
 api::RequestResponse<rapidjson::Document> get_config(void)
 {
-        return api::internal::get_parsed_request(api::CONFIGPATH);
+        return esphalib::internal::get_parsed_request(api::CONFIGPATH);
 }
 
 // Get the config status
@@ -52,5 +45,4 @@ Config_Status_type check_config(void)
         return result;
 }
 
-} // namespace config
-} // namespace esphalib
+} // namespace esphalib::config

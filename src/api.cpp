@@ -2,23 +2,37 @@
 #include "cJSON.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
+#include <chrono>
 #include <cstdlib>
-#include <document.h>
 #include <memory>
 #include <string>
-#include <chrono>
 
-namespace esphalib
-{
+#include "rapidjson_wrapper.hpp"
 
-namespace api
+namespace esphalib::api
 {
 
 namespace
 {
 constexpr auto TAG{"API"};
 auto const timeout_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(10)).count();
+
+std::string ha_url;
+std::string long_lived_access_token;
 } // namespace
+
+std::string get_ha_url() { return ha_url; }
+
+std::string get_long_lived_access_token() { return long_lived_access_token; }
+
+// Set HA URL e.g. http://hassio.local:8123
+void set_ha_url(std::string_view new_url);
+
+// Set HA long lived access token
+void set_long_lived_access_token(std::string_view new_long_lived_access_token)
+{
+        long_lived_access_token = new_long_lived_access_token;
+}
 
 using namespace rapidjson;
 
@@ -35,15 +49,14 @@ RequestResponse<std::string> post_req(std::string_view path, std::string_view da
         const std::string auth_data{"Bearer " + get_long_lived_access_token()};
 
         // Attempt to make API request to Home Assistant
-        auto const home_assistant_config = [&api_url]{
-            esp_http_client_config_t home_assistant_config{};
-            home_assistant_config.url = api_url.c_str();
-            home_assistant_config.method = HTTP_METHOD_POST;
-            home_assistant_config.timeout_ms = timeout_ms;
-            home_assistant_config.disable_auto_redirect = false;
-            home_assistant_config.is_async = false,
-            home_assistant_config.skip_cert_common_name_check = true;
-            return home_assistant_config;
+        auto const home_assistant_config = [&api_url] {
+                esp_http_client_config_t home_assistant_config{};
+                home_assistant_config.url = api_url.c_str();
+                home_assistant_config.method = HTTP_METHOD_POST;
+                home_assistant_config.timeout_ms = timeout_ms;
+                home_assistant_config.disable_auto_redirect = false;
+                home_assistant_config.is_async = false, home_assistant_config.skip_cert_common_name_check = true;
+                return home_assistant_config;
         }();
 
         ESP_LOGV(TAG, "Attempting connection to %s", api_url.c_str());
@@ -198,5 +211,4 @@ Status_type get_api_status(void)
         return status;
 }
 
-} // namespace api
-} // namespace esphalib
+} // namespace esphalib::api

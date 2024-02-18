@@ -293,7 +293,11 @@
         "id": "21be8021ea22acd149fa0bdaf6026b1e",
         "has_entity_name": true,
         "name": null,
-        "options": {},
+        "options": {
+          "conversation": {
+            "should_expose": false
+          }
+        },
         "original_device_class": null,
         "original_icon": "mdi:sun-clock",
         "original_name": "Solar rising",

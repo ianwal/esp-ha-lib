@@ -218,8 +218,8 @@ void setup_wifi()
 {
     // Make sure Wi-Fi credentials are at least available before testing Wi-Fi
     // This does not necessarily mean they are set
-    static_assert(Secrets::NETWORK_SSID.size() > 0, "NETWORK_SSID is not defined.");
-    static_assert(Secrets::NETWORK_PASSWORD.size() > 0, "NETWORK_PASSWORD is not defined.");
+    static_assert(!Secrets::NETWORK_SSID.empty(), "NETWORK_SSID is not defined.");
+    static_assert(!Secrets::NETWORK_PASSWORD.empty(), "NETWORK_PASSWORD is not defined.");
 
     auto const is_nvs_init_success = Nvs::init_nvs();
     // Wi-Fi needs NVS init.

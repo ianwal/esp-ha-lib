@@ -37,9 +37,6 @@ class HAEntity
         static std::string get_entity_req(const std::string &entity_name);
 };
 
-void set_ha_url(const char *url);
-void set_long_lived_access_token(const char *new_long_lived_access_token);
-
 cJSON *get_states(void);
 
 } // namespace state

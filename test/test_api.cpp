@@ -58,15 +58,15 @@ void test_entity_uploadreceive(void)
 
         HAEntity *newEntity{HAEntity::get(entity_id)};
         TEST_ASSERT_NOT_NULL(newEntity);
-        if (newEntity != nullptr) {
-                // if std::stof fails, the program will abort
-                const float fstate{std::stof(newEntity->state)};
-                ESP_LOGI(TAG, "Uploaded: %f, Received %f", state, fstate);
+        ESP_LOGI(TAG, "Uploaded: %f", state);
+        // if std::stof fails, the program will abort.
+        // TODO: Use gtest and check if it is a float instead of using std::stof.
+        const float fstate{std::stof(newEntity->state)};
+        ESP_LOGI(TAG, "Received %f", fstate);
 
-                // HA only stores floats to 2 decimal places it seems
-                constexpr const float epsilon{1e-2};
-                TEST_ASSERT_FLOAT_WITHIN(epsilon, state, fstate);
-        }
+        // HA only returns floats to 2 decimal places, it seems.
+        constexpr const float epsilon{1e-2};
+        TEST_ASSERT_FLOAT_WITHIN(epsilon, state, fstate);
         delete newEntity;
 }
 
@@ -196,24 +196,6 @@ void test_post_config()
         TEST_ASSERT_TRUE(config::check_config() == api::Config_Status_type::VALID);
 }
 
-// Sets and checks to make sure the url and long lived access token are set before doing tests
-// Tests that follow will fail if they're not set which is good, but it's annoying to debug.
-void test_set_url_and_token()
-{
-        // Ensure they are not set before the setters are used.
-        TEST_ASSERT_NOT_EQUAL_MESSAGE(0, Secrets::HA_URL.size(), "HA_URL is not set.");
-        TEST_ASSERT_NOT_EQUAL_MESSAGE(0, Secrets::LONG_LIVED_ACCESS_TOKEN.size(),
-                                      "LONG_LIVED_ACCESS_TOKEN is not set.");
-
-        api::set_ha_url(Secrets::HA_URL);
-        api::set_long_lived_access_token(Secrets::LONG_LIVED_ACCESS_TOKEN);
-
-        // Then HA_URL and LONG_LIVED_ACCESS_TOKEN equal the strings they are set from
-        TEST_ASSERT_EQUAL_STRING_MESSAGE(Secrets::HA_URL.data(), api::get_ha_url().c_str(), "HA_URL failed to be set.");
-        TEST_ASSERT_EQUAL_STRING_MESSAGE(Secrets::LONG_LIVED_ACCESS_TOKEN.data(), api::get_long_lived_access_token().c_str(),
-                                         "long_lived_access_token failed to be set.");
-}
-
 void setup_wifi()
 {
     // Make sure Wi-Fi credentials are at least available before testing Wi-Fi
@@ -231,6 +213,9 @@ void setup_wifi()
 
 int runUnityTests(void)
 {
+        api::set_ha_url(Secrets::HA_URL);
+        api::set_long_lived_access_token(Secrets::LONG_LIVED_ACCESS_TOKEN);
+
         UNITY_BEGIN();
         // Non Wi-Fi dependent tests
         {
@@ -241,10 +226,9 @@ int runUnityTests(void)
         // Wi-Fi dependent tests
         {
             setup_wifi();
-            /*
-            RUN_TEST(test_set_url_and_token);
             RUN_TEST(test_api_running);
             RUN_TEST(test_entity_uploadreceive);
+            /*
             RUN_TEST(test_print_real_HAEntity);
             RUN_TEST(test_get_events);
             RUN_TEST(test_get_event_from_events);

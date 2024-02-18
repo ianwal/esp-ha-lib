@@ -25,10 +25,8 @@ std::string get_ha_url() { return ha_url; }
 
 std::string get_long_lived_access_token() { return long_lived_access_token; }
 
-// Set HA URL e.g. http://hassio.local:8123
-void set_ha_url(std::string_view new_url);
+void set_ha_url(std::string_view new_url) { ha_url = new_url; }
 
-// Set HA long lived access token
 void set_long_lived_access_token(std::string_view new_long_lived_access_token)
 {
         long_lived_access_token = new_long_lived_access_token;
@@ -38,28 +36,34 @@ using namespace rapidjson;
 
 RequestResponse<std::string> post_req(std::string_view path, std::string_view data, const bool return_response)
 {
+        // TODO: Check
         if (get_ha_url().empty() || get_long_lived_access_token().empty()) {
                 ESP_LOGE(TAG, "Failed to upload data: ha_url or access token not set yet");
-                return {RequestStatus_type::FAILURE, {}};
+                return {RequestStatus_type::FAILURE, std::string{}};
         }
 
         // Create API URL. Will look something like http://HA_URL/api/states/entity.entity_NAME
-        const std::string api_url{get_ha_url() + std::string{path}};
 
         const std::string auth_data{"Bearer " + get_long_lived_access_token()};
+        // NOTE: A pointer to the contents of this string is required by the
+        //       HTTP config below. Therefore, the lifetime of this string must
+        //       exist for as long as the http config can access it.
+        const std::string api_url{get_ha_url() + std::string{path}};
 
         // Attempt to make API request to Home Assistant
-        auto const home_assistant_config = [&api_url] {
-                esp_http_client_config_t home_assistant_config{};
-                home_assistant_config.url = api_url.c_str();
-                home_assistant_config.method = HTTP_METHOD_POST;
-                home_assistant_config.timeout_ms = timeout_ms;
-                home_assistant_config.disable_auto_redirect = false;
-                home_assistant_config.is_async = false, home_assistant_config.skip_cert_common_name_check = true;
-                return home_assistant_config;
-        }();
+        auto home_assistant_config = [&api_url, &path] {
+                esp_http_client_config_t http_config{};
+                http_config.url = api_url.c_str();
+                http_config.method = HTTP_METHOD_POST;
+                http_config.timeout_ms = timeout_ms;
+                http_config.disable_auto_redirect = false;
+                http_config.is_async = false;
+                http_config.skip_cert_common_name_check = true;
 
-        ESP_LOGV(TAG, "Attempting connection to %s", api_url.c_str());
+                ESP_LOGV(TAG, "Attempting connection to %s", api_url.c_str());
+
+                return http_config;
+        }();
 
         esp_http_client_handle_t client = esp_http_client_init(&home_assistant_config);
         esp_http_client_set_header(client, "Authorization", auth_data.c_str());
@@ -75,7 +79,7 @@ RequestResponse<std::string> post_req(std::string_view path, std::string_view da
         auto request_status = RequestStatus_type::UNKNOWN;
         if (post_err == ESP_OK) {
                 if (data.size() > 0) {
-                        ESP_LOGV(TAG, "Sent %s to %s", data.data(), api_url.c_str());
+                        ESP_LOGV(TAG, "POST data sent: %s", data.data());
                 }
                 request_status = RequestStatus_type::SUCCESS;
         } else {
@@ -98,13 +102,15 @@ RequestResponse<std::string> post_req(std::string_view path, std::string_view da
                                         auto const post_response_read_err = esp_http_client_read_response(
                                             client, response_buffer.get(), content_length);
                                         if (post_response_read_err != ESP_FAIL) {
-                                                ret_str = std::string{response_buffer.get()};
+                                                ret_str = std::string(response_buffer.get(), content_length);
                                                 ESP_LOGV(TAG, "Content length %lld Read: %s", content_length,
                                                          ret_str.c_str());
                                         } else {
                                                 ESP_LOGE(TAG, "POST Response failed %s",
                                                          esp_err_to_name(post_response_read_err));
                                         }
+                                } else {
+                                        request_status = RequestStatus_type::FAILURE;
                                 }
                         } else {
                                 ESP_LOGE(TAG, "POST req failed. Could not send upload entity data.");
@@ -125,50 +131,54 @@ RequestResponse<std::string> get_req(std::string_view path)
                 return {RequestStatus_type::FAILURE, std::string{}};
         }
 
-        char *local_response_buffer = nullptr;
+        char *local_response_buffer{nullptr};
 
         // Create API URL. Will look something like http://HA_URL/api/states/entity.entity_NAME
-        const std::string api_URL{get_ha_url() + std::string{path}};
 
-        constexpr const char *bearer = "Bearer ";
-        const std::string auth_data{bearer + get_long_lived_access_token()};
+        const std::string auth_data{"Bearer " + get_long_lived_access_token()};
 
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-        esp_http_client_config_t config = {
-            .url = api_URL.c_str(),
-            .method = HTTP_METHOD_GET,
-            .timeout_ms = timeout_ms,
-            .disable_auto_redirect = false,
-            .user_data = local_response_buffer,
-            .is_async = false,
-            .skip_cert_common_name_check = true,
-        };
+        // NOTE: A pointer to the contents of this string is required by the
+        //       HTTP config below. Therefore, the lifetime of this string must
+        //       exist for as long as the http config can access it.
+        const std::string api_url{get_ha_url() + std::string{path}};
 
-        esp_http_client_handle_t client = esp_http_client_init(&config);
+        // Attempt to make API request to Home Assistant
+        auto home_assistant_config = [&api_url, &local_response_buffer, &path] {
+                esp_http_client_config_t http_config{};
+                http_config.url = api_url.c_str();
+                http_config.method = HTTP_METHOD_GET;
+                http_config.timeout_ms = timeout_ms;
+                http_config.disable_auto_redirect = false;
+                http_config.user_data = local_response_buffer, http_config.is_async = false;
+                http_config.skip_cert_common_name_check = true;
+                ESP_LOGV(TAG, "Attempting GET connection to %s", api_url.c_str());
+                return http_config;
+        }();
+        ESP_LOGV(TAG, "Attempting GET connection with password: %s", get_long_lived_access_token().c_str());
+
+        esp_http_client_handle_t client = esp_http_client_init(&home_assistant_config);
         esp_http_client_set_header(client, "Authorization", auth_data.c_str());
         esp_http_client_set_header(client, "Content-Type", "application/json");
 
-        auto request_status{RequestStatus_type::UNKNOWN};
+        auto request_status = RequestStatus_type::UNKNOWN;
         std::string ret_str;
         // Attempt API request to Home Assistant
-        const esp_err_t err = esp_http_client_open(client, 0);
+        auto const err = esp_http_client_open(client, 0);
         if (err == ESP_OK) {
-                const esp_err_t fetcherr = esp_http_client_fetch_headers(client);
+                auto const fetcherr = esp_http_client_fetch_headers(client);
                 if (fetcherr != ESP_FAIL) {
-                        int64_t content_length = esp_http_client_get_content_length(client);
-                        local_response_buffer = static_cast<char *>(malloc(content_length + 1));
-                        // ESP_LOGI(TAG, "Buffer size %lld", esp_http_client_get_content_length(client));
-                        if (!local_response_buffer) {
-                                ESP_LOGE(TAG, "Buffer malloc failed");
+                        auto const content_length = esp_http_client_get_content_length(client);
+                        ESP_LOGI(TAG, "Buffer size %lld", content_length);
+                        local_response_buffer = new (std::nothrow) char[content_length + 1];
+                        if (local_response_buffer == nullptr) {
                                 request_status = RequestStatus_type::FAILURE;
                         } else {
                                 esp_http_client_read_response(client, local_response_buffer, content_length);
-                                local_response_buffer[content_length] = '\0'; // ensure response is null-terminated
-                                ret_str = std::string{local_response_buffer};
-                                free(local_response_buffer);
-                                ESP_LOGV(TAG, "Read %s, \nSize: %lld", ret_str.c_str(), content_length);
+                                ret_str = std::string(local_response_buffer, content_length);
+                                ESP_LOGI(TAG, "Read %s, \nSize: %lld", ret_str.c_str(), content_length);
                                 request_status = RequestStatus_type::SUCCESS;
                         }
+                        delete[] local_response_buffer;
                 } else {
                         ESP_LOGE(TAG, "Failed to fetch request: %s", esp_err_to_name(fetcherr));
                         request_status = RequestStatus_type::FAILURE;
@@ -193,20 +203,32 @@ Status_type get_api_status(void)
 {
         auto const req = get_req(STATUSPATH);
 
+        // TODO: Handle authorization errors in get_req.
+        //       These can be in the output status.
         auto status = Status_type::OFFLINE;
+        ESP_LOGI(TAG, "API STATUS: %s", req.response.c_str());
         if (req.response.empty() || req.status != api::RequestStatus_type::SUCCESS) {
                 status = Status_type::UNKNOWN;
         } else {
                 rapidjson::Document d;
-                d.Parse(req.response);
-                if (auto message_it = d.FindMember("message"); message_it != d.MemberEnd()) {
-                        auto const message = (*message_it).value.GetString();
-                        constexpr const char *API_RUNNING_STR = "API running.";
-                        if (std::strcmp(message, API_RUNNING_STR) == 0) {
-                                // Success! API request was valid and the string says it is running.
-                                status = Status_type::ONLINE;
-                        }
+                ParseResult const parse_result = d.Parse(req.response);
+                if (!parse_result) {
+                    status = Status_type::UNKNOWN;
+                } else {
+                    if (auto message_it = d.FindMember("message"); message_it != d.MemberEnd()) {
+                            auto const message = (*message_it).value.GetString();
+                            constexpr auto API_RUNNING_STR = "API running.";
+                            if (std::strcmp(message, API_RUNNING_STR) == 0) {
+                                    // Success! API request was valid and the string says it is running.
+                                    status = Status_type::ONLINE;
+                            } else {
+                                    status = Status_type::OFFLINE;
+                            }
+                    } else {
+                            status = Status_type::UNKNOWN;
+                    }
                 }
+
         }
         return status;
 }

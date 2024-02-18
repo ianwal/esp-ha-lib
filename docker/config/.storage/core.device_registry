@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "minor_version": 3,
+  "minor_version": 4,
   "key": "core.device_registry",
   "data": {
     "devices": [
@@ -26,7 +26,8 @@
         "name_by_user": null,
         "name": "Sun",
         "sw_version": null,
-        "via_device_id": null
+        "via_device_id": null,
+        "serial_number": null
       }
     ],
     "deleted_devices": []

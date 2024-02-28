@@ -20,11 +20,7 @@ constexpr auto TAG = "States";
 
 std::string get_states_req()
 {
-        auto req = api::get_req(api::STATESPATH);
-
-        if (req.response.empty() || req.status != api::RequestStatus_type::SUCCESS) {
-                ESP_LOGE(TAG, "API states GET request failed");
-        }
+        auto const req = api::get_req(api::STATESPATH);
         return req.response;
 }
 
@@ -40,19 +36,14 @@ cJSON *parse_states_str(const std::string &states_str)
 } // namespace
 
 // ex. unit_of_measurement, friendly_name
-void add_entity_attribute(const char *key, const char *value, HAEntity *entity)
+void add_entity_attribute(const char *key, const char *value, HAEntity& entity)
 {
-        if (!entity) {
-                ESP_LOGE(TAG, "Failed to add entity to attribute. Entity is null.");
-                return;
-        }
-
-        if (entity->attributes == nullptr) {
-                entity->attributes = cJSON_CreateObject();
+        if (entity.attributes == nullptr) {
+                entity.attributes = cJSON_CreateObject();
         }
 
         ESP_LOGV(TAG, "Adding %s:%s to attributes", key, value);
-        cJSON_AddItemToObject(entity->attributes, key, cJSON_CreateString(value));
+        cJSON_AddItemToObject(entity.attributes, key, cJSON_CreateString(value));
 }
 
 std::string HAEntity::get_entity_req(const std::string &entity_name)
@@ -68,18 +59,14 @@ std::string HAEntity::get_entity_req(const std::string &entity_name)
 
 // Parses the entity str using cJSON
 // Duplicates and assings the values from the parsed cJSON, then frees the cJSON
-HAEntity *HAEntity::parse_entity_str(const std::string &entitystr)
+std::optional<HAEntity> HAEntity::parse_entity_str(const std::string &entitystr)
 {
         cJSON *jsonreq = cJSON_Parse(entitystr.c_str());
         if (jsonreq == nullptr) {
-                return nullptr;
+                return std::nullopt;
         }
 
-        HAEntity *entity = new HAEntity;
-        if (!entity) {
-                ESP_LOGE(TAG, "Failed to malloc HAEntity.");
-                return nullptr;
-        }
+        HAEntity entity;
 
         // Note: all the *_state_str are pointers that are freed by cJSON in the cJSON_Delete. Do not free manually.
         cJSON *json_state = cJSON_GetObjectItem(jsonreq, "state");
@@ -87,7 +74,7 @@ HAEntity *HAEntity::parse_entity_str(const std::string &entitystr)
                 ESP_LOGI(TAG, "Entity has no state or is not a string.");
         } else {
                 char *json_state_str = cJSON_GetStringValue(json_state);
-                entity->state = std::string{json_state_str};
+                entity.state = std::string{json_state_str};
         }
 
         cJSON *json_entity_id = cJSON_GetObjectItem(jsonreq, "entity_id");
@@ -95,7 +82,7 @@ HAEntity *HAEntity::parse_entity_str(const std::string &entitystr)
                 ESP_LOGI(TAG, "Entity has no entity_id or it is not a string.");
         } else {
                 char *json_entity_id_str = cJSON_GetStringValue(json_entity_id);
-                entity->entity_id = std::string{json_entity_id_str};
+                entity.entity_id = std::string{json_entity_id_str};
         }
 
         cJSON *json_last_changed = cJSON_GetObjectItem(jsonreq, "last_changed");
@@ -103,7 +90,7 @@ HAEntity *HAEntity::parse_entity_str(const std::string &entitystr)
                 ESP_LOGI(TAG, "Entity has no last_changed or it is not a string.");
         } else {
                 char *json_last_changed_str = cJSON_GetStringValue(json_last_changed);
-                entity->last_changed = std::string{json_last_changed_str};
+                entity.last_changed = std::string{json_last_changed_str};
         }
 
         cJSON *json_last_updated = cJSON_GetObjectItem(jsonreq, "last_updated");
@@ -111,14 +98,14 @@ HAEntity *HAEntity::parse_entity_str(const std::string &entitystr)
                 ESP_LOGI(TAG, "Entity has no last_updated or it is not a string.");
         } else {
                 char *json_last_updated_str = cJSON_GetStringValue(json_last_updated);
-                entity->last_updated = std::string{json_last_updated_str};
+                entity.last_updated = std::string{json_last_updated_str};
         }
 
         cJSON *json_attributes = cJSON_GetObjectItem(jsonreq, "attributes");
         if (cJSON_IsNull(json_attributes) || !cJSON_IsObject(json_attributes)) {
                 ESP_LOGI(TAG, "Entity has no attributes or it is not a cJSON object.");
         } else {
-                entity->attributes = cJSON_Duplicate(json_attributes, true);
+                entity.attributes = cJSON_Duplicate(json_attributes, true);
         }
 
         cJSON_Delete(jsonreq);
@@ -126,51 +113,46 @@ HAEntity *HAEntity::parse_entity_str(const std::string &entitystr)
         return entity;
 }
 
-HAEntity *HAEntity::get(const std::string &entity_name)
+std::optional<HAEntity> HAEntity::get(const std::string &entity_name)
 {
-        const std::string entitystr{HAEntity::get_entity_req(entity_name)};
-        HAEntity *entity{HAEntity::parse_entity_str(entitystr)};
-        if (!entity) {
-                ESP_LOGE(TAG, "Failed to get HAEntity");
-        }
-
-        return entity;
+        const std::string entity_str{HAEntity::get_entity_req(entity_name)};
+        return HAEntity::parse_entity_str(entity_str);
 }
 
 // Get cJSON of all the states from Home Assistant
 // Note: States might be really big. Mine is around 2400 char on a small install.
 cJSON *get_states()
 {
-        const std::string states_str = get_states_req();
-        cJSON *states = parse_states_str(states_str);
+        auto const states_str = get_states_req();
+        auto *states = parse_states_str(states_str);
         return states;
 }
 
 // Create API request to HA with entity data
-void HAEntity::post()
+void HAEntity::post() const
 {
-        if (entity_id.empty()) {
+        if (entity_id.empty() || (attributes == nullptr)) {
                 ESP_LOGE(TAG, "Failed to post entity. Entity or entity members are null.");
                 return;
         }
-        cJSON *json_api_req = cJSON_CreateObject();
+        auto *json_api_req = cJSON_CreateObject();
 
         cJSON_AddItemToObject(json_api_req, "state", cJSON_CreateString(state.c_str()));
         cJSON_AddItemToObject(json_api_req, "attributes", cJSON_Duplicate(attributes, true));
 
-        char *jsonstr = cJSON_Print(json_api_req);
+        auto *const jsonstr = cJSON_Print(json_api_req);
 
-        const std::string path{std::string{api::STATESPATH} + "/" + entity_id};
+        auto const path = std::string{api::STATESPATH} + "/" + entity_id;
 
-        cJSON_Delete(json_api_req);
         api::post_req(path, jsonstr, false);
-        free(jsonstr);
+        //cJSON_free(jsonstr);
+        cJSON_Delete(json_api_req);
 }
 
 // ex. unit_of_measurement, friendly_name
-void HAEntity::add_attribute(const char *key, const char *value)
+void HAEntity::add_attribute(const char *const key, const char *const value)
 {
-        if (!attributes) {
+        if (attributes == nullptr) {
                 attributes = cJSON_CreateObject();
         }
 
@@ -178,7 +160,7 @@ void HAEntity::add_attribute(const char *key, const char *value)
         cJSON_AddItemToObject(attributes, key, cJSON_CreateString(value));
 }
 
-void HAEntity::print()
+void HAEntity::print() const
 {
         ESP_LOGV(TAG, "Printing HAEntity:");
         ESP_LOGI(TAG, "entity_id: %s", entity_id.c_str());
@@ -192,7 +174,7 @@ void HAEntity::print()
         if (cJSON_IsNull(attributes) || !cJSON_IsObject(attributes)) {
                 ESP_LOGI(TAG, "no attributes");
         } else {
-                char *jsonstr = cJSON_Print(attributes);
+                auto *const jsonstr = cJSON_Print(attributes);
                 ESP_LOGI(TAG, "Attributes - %s", jsonstr);
                 free(jsonstr);
         }

@@ -51,19 +51,15 @@ RequestResponse<std::string> post_req(std::string_view path, std::string_view da
         const std::string api_url{get_ha_url() + std::string{path}};
 
         // Attempt to make API request to Home Assistant
-        auto home_assistant_config = [&api_url, &path] {
-                esp_http_client_config_t http_config{};
-                http_config.url = api_url.c_str();
-                http_config.method = HTTP_METHOD_POST;
-                http_config.timeout_ms = timeout_ms;
-                http_config.disable_auto_redirect = false;
-                http_config.is_async = false;
-                http_config.skip_cert_common_name_check = true;
+        esp_http_client_config_t home_assistant_config{};
+        home_assistant_config.url = api_url.c_str();
+        home_assistant_config.method = HTTP_METHOD_POST;
+        home_assistant_config.timeout_ms = timeout_ms;
+        home_assistant_config.disable_auto_redirect = false;
+        home_assistant_config.is_async = false;
+        home_assistant_config.skip_cert_common_name_check = true;
 
-                ESP_LOGV(TAG, "Attempting connection to %s", api_url.c_str());
-
-                return http_config;
-        }();
+        ESP_LOGV(TAG, "Attempting connection to %s", api_url.c_str());
 
         esp_http_client_handle_t client = esp_http_client_init(&home_assistant_config);
         esp_http_client_set_header(client, "Authorization", auth_data.c_str());

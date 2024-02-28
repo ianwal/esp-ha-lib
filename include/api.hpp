@@ -6,7 +6,6 @@
 
 namespace esphalib
 {
-
 namespace api
 {
 
@@ -43,7 +42,7 @@ template <class T> struct RequestResponse {
 };
 
 RequestResponse<std::string> get_req(std::string_view path);
-RequestResponse<std::string> post_req(std::string_view path, std::string_view data, const bool return_response);
+RequestResponse<std::string> post_req(std::string_view path, std::string_view data, bool return_response);
 Status_type get_api_status(void);
 
 } // namespace api
